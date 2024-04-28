@@ -2,10 +2,11 @@ package viewport
 
 import (
 	"fmt"
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/robinovitch61/bubbles/key"
-	"strings"
 )
 
 const (
@@ -25,6 +26,7 @@ var (
 	defaultViewportFooterStyle      = regular.Copy().Foreground(grey)
 )
 
+// Model represents a viewport component
 type Model struct {
 	KeyMap                    KeyMap
 	LineContinuationIndicator string
@@ -69,6 +71,7 @@ type Model struct {
 	xOffset int
 }
 
+// New creates a new viewport model with reasonable defaults
 func New(width, height int) (m Model) {
 	m.setWidthAndHeight(width, height)
 	m.updateContentHeight()
@@ -86,6 +89,7 @@ func New(width, height int) (m Model) {
 	return m
 }
 
+// Update processes messages and updates the model
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
@@ -168,6 +172,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// View renders the viewport
 func (m Model) View() string {
 	var viewString string
 
@@ -358,7 +363,7 @@ func (m *Model) updateWrappedContent() {
 				contentIdxToFirstWrappedContentIdx[contentIdx] = wrappedContentIdx
 			}
 
-			wrappedContentIdx += 1
+			wrappedContentIdx++
 		}
 	}
 	m.wrappedContent = allWrappedContent
@@ -562,8 +567,8 @@ func (m Model) getNumVisibleItems() int {
 		} else {
 			break
 		}
-		contentIdx += 1
-		itemCount += 1
+		contentIdx++
+		itemCount++
 	}
 	return itemCount
 }

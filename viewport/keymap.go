@@ -4,6 +4,7 @@ import "github.com/robinovitch61/bubbles/key"
 
 const spacebar = " "
 
+// KeyMap contains viewport key bindings
 type KeyMap struct {
 	PageDown     key.Binding
 	PageUp       key.Binding
@@ -17,6 +18,7 @@ type KeyMap struct {
 	Bottom       key.Binding
 }
 
+// DefaultKeyMap returns the default key bindings for a viewport.
 func DefaultKeyMap() KeyMap {
 	return KeyMap{
 		PageDown: key.NewBinding(
