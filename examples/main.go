@@ -5,8 +5,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/robinovitch61/bubbles/key"
 	"os"
 	"strings"
 
