@@ -1,7 +1,6 @@
 package main
 
-// An example program demonstrating the pager component from the Bubbles
-// component library.
+// An example program demonstrating the viewport component
 
 import (
 	"fmt"
@@ -11,7 +10,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/robinovitch61/bubbles/viewport"
+	"github.com/robinovitch61/bubbleo/viewport"
 )
 
 type model struct {

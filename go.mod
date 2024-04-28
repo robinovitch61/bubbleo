@@ -1,4 +1,4 @@
-module github.com/robinovitch61/bubbles
+module github.com/robinovitch61/bubbleo
 
 go 1.18
 

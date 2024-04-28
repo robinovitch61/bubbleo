@@ -1,7 +1,6 @@
-Bubbles
-=======
+# Bubbleo
 
-Custom bubbles for [Bubble Tea](https://github.com/charmbracelet/bubbletea), akin to https://github.com/charmbracelet/bubbles.
+Custom components for [Bubble Tea](https://github.com/charmbracelet/bubbletea), akin to https://github.com/charmbracelet/bubbles.
 
 Currently contains a viewport with some nice features like:
 
