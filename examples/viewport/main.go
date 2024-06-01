@@ -13,10 +13,19 @@ import (
 	"github.com/robinovitch61/bubbleo/viewport"
 )
 
+// RenderableString is a simple type that wraps a string and implements the Renderable interface
+type RenderableString struct {
+	content string
+}
+
+func (r RenderableString) Render() string {
+	return r.content
+}
+
 type model struct {
-	lines    []string
+	lines    []RenderableString
 	ready    bool
-	viewport viewport.Model
+	viewport viewport.Model[RenderableString]
 	header   []string
 }
 
@@ -49,7 +58,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// we can initialize the viewport. The initial dimensions come in
 			// quickly, though asynchronously, which is why we wait for them
 			// here.
-			m.viewport = viewport.New(msg.Width-2, msg.Height-5-2)
+			m.viewport = viewport.New[RenderableString](msg.Width-2, msg.Height-5-2)
 			m.viewport.SetContent(m.lines)
 			m.viewport.SetSelectionEnabled(false)
 			m.viewport.SetStringToHighlight("surf")
@@ -123,8 +132,13 @@ func main() {
 	}
 
 	lines := strings.Split(string(content), "\n")
+	renderableLines := make([]RenderableString, len(lines))
+	for i, line := range lines {
+		renderableLines[i] = RenderableString{content: line}
+	}
+
 	p := tea.NewProgram(
-		model{lines: lines},
+		model{lines: renderableLines},
 		tea.WithAltScreen(), // use the full size of the terminal in its "alternate screen buffer"
 	)
 
