@@ -306,9 +306,12 @@ func (m Model[T]) GetSelectedContentIdx() int {
 	return m.selectedContentIdx
 }
 
-// GetSelectedContent returns the currently selected content
-func (m Model[T]) GetSelectedContent() T {
-	return m.content[m.selectedContentIdx]
+// GetSelectedContent returns the currently selected content, or nil if there is none
+func (m Model[T]) GetSelectedContent() *T {
+	if m.selectedContentIdx < 0 || m.selectedContentIdx >= len(m.content) {
+		return nil
+	}
+	return &m.content[m.selectedContentIdx]
 }
 
 // SetStringToHighlight sets a string to highlight in the viewport
