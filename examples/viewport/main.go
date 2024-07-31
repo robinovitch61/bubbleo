@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/robinovitch61/bubbleo/dev"
 	"os"
 	"strings"
 
@@ -23,10 +24,10 @@ func (r RenderableString) Render() string {
 }
 
 type model struct {
-	lines    []RenderableString
-	ready    bool
-	viewport viewport.Model[RenderableString]
-	header   []string
+	contentProvider viewport.ContentProvider[RenderableString]
+	ready           bool
+	viewport        viewport.Model[RenderableString]
+	header          []string
 }
 
 func (m model) Init() tea.Cmd {
@@ -58,8 +59,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// we can initialize the viewport. The initial dimensions come in
 			// quickly, though asynchronously, which is why we wait for them
 			// here.
-			m.viewport = viewport.New[RenderableString](msg.Width-2, msg.Height-5-2)
-			m.viewport.SetContent(m.lines)
+			dev.Debug(fmt.Sprint("length of content: ", m.contentProvider.Len()))
+			m.viewport = viewport.New[RenderableString](msg.Width-2, msg.Height-5-2, m.contentProvider)
+			m.viewport.SetContentProvider(m.contentProvider)
 			m.viewport.SetSelectionEnabled(false)
 			m.viewport.SetStringToHighlight("surf")
 			m.viewport.SetWrapText(true)
@@ -123,6 +125,22 @@ func getShortHelp(bindings []key.Binding) string {
 	return output
 }
 
+type ArrayBackedContentProvider[T viewport.Renderable] struct {
+	content []T
+}
+
+func (a ArrayBackedContentProvider[T]) TakeOneAt(i int) T {
+	return a.content[i]
+}
+
+func (a ArrayBackedContentProvider[T]) TakeN(start, n int) []T {
+	return a.content[start : start+n]
+}
+
+func (a ArrayBackedContentProvider[T]) Len() int {
+	return len(a.content)
+}
+
 func main() {
 	// Load some text for our viewport
 	content, err := os.ReadFile("example.txt")
@@ -137,8 +155,11 @@ func main() {
 		renderableLines[i] = RenderableString{content: line}
 	}
 
+	dub := append(renderableLines, renderableLines...)
+	quad := append(dub, dub...)
+	cp := ArrayBackedContentProvider[RenderableString]{quad}
 	p := tea.NewProgram(
-		model{lines: renderableLines},
+		model{contentProvider: cp},
 		tea.WithAltScreen(), // use the full size of the terminal in its "alternate screen buffer"
 	)
 

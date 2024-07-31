@@ -2,6 +2,7 @@ package viewport
 
 import (
 	"fmt"
+	"github.com/robinovitch61/bubbleo/dev"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -30,6 +31,12 @@ type Renderable interface {
 	Render() string
 }
 
+type ContentProvider[T Renderable] interface {
+	TakeOneAt(idx int) T
+	TakeN(start, n int) []T
+	Len() int
+}
+
 // Model represents a viewport component
 type Model[T Renderable] struct {
 	KeyMap                    KeyMap
@@ -41,10 +48,10 @@ type Model[T Renderable] struct {
 	ContentStyle              lipgloss.Style
 	FooterStyle               lipgloss.Style
 
-	header         []string
-	wrappedHeader  []string
-	content        []T
-	wrappedContent []string
+	header          []string
+	wrappedHeader   []string
+	contentProvider ContentProvider[T]
+	wrappedContent  []string
 
 	// wrappedContentIdxToContentIdx maps the item at an index of wrappedContent to the index of content it is associated with (many wrappedContent indexes -> one content index)
 	wrappedContentIdxToContentIdx map[int]int
@@ -77,7 +84,8 @@ type Model[T Renderable] struct {
 }
 
 // New creates a new viewport model with reasonable defaults
-func New[T Renderable](width, height int) (m Model[T]) {
+func New[T Renderable](width, height int, contentProvider ContentProvider[T]) (m Model[T]) {
+	m.contentProvider = contentProvider
 	m.setWidthAndHeight(width, height)
 	m.updateContentHeight()
 
@@ -237,10 +245,10 @@ func (m Model[T]) View() string {
 	return renderedViewString
 }
 
-// SetContent sets the content, the selectable set of lines in the viewport
-func (m *Model[T]) SetContent(content []T) {
-	m.content = content
-	m.updateWrappedContent()
+// SetContentProvider sets the content provider, the selectable set of lines in the viewport
+func (m *Model[T]) SetContentProvider(contentProvider ContentProvider[T]) {
+	m.contentProvider = contentProvider
+	//m.updateWrappedContent()
 	m.updateForHeaderAndContent()
 	m.fixSelection()
 }
@@ -310,10 +318,11 @@ func (m Model[T]) GetSelectedContentIdx() int {
 
 // GetSelectedContent returns the currently selected content, or nil if there is none
 func (m Model[T]) GetSelectedContent() *T {
-	if m.selectedContentIdx >= len(m.content) || m.selectedContentIdx < 0 {
+	if m.selectedContentIdx >= m.contentProvider.Len() || m.selectedContentIdx < 0 {
 		return nil
 	}
-	return &m.content[m.selectedContentIdx]
+	selectedContent := m.contentProvider.TakeOneAt(m.selectedContentIdx)
+	return &selectedContent
 }
 
 // SetStringToHighlight sets a string to highlight in the viewport
@@ -341,8 +350,8 @@ func (m *Model[T]) ScrollToTop() {
 
 // ScrollToBottom scrolls the viewport to the bottom
 func (m *Model[T]) ScrollToBottom() {
-	m.selectedContentIdxDown(len(m.content))
-	m.viewDown(len(m.content))
+	m.selectedContentIdxDown(m.contentProvider.Len())
+	m.viewDown(m.contentProvider.Len())
 }
 
 func (m *Model[T]) setXOffset(n int) {
@@ -359,33 +368,33 @@ func (m *Model[T]) updateWrappedHeader() {
 	m.wrappedHeader = allWrappedHeader
 }
 
-func (m *Model[T]) updateWrappedContent() {
-	var allWrappedContent []string
-	wrappedContentIdxToContentIdx := make(map[int]int)
-	contentIdxToFirstWrappedContentIdx := make(map[int]int)
-	contentIdxToHeight := make(map[int]int)
-
-	var wrappedContentIdx int
-	for contentIdx, item := range m.content {
-		line := item.Render()
-		wrappedLinesForLine := m.getWrappedLines(line)
-		contentIdxToHeight[contentIdx] = len(wrappedLinesForLine)
-		for _, wrappedLine := range wrappedLinesForLine {
-			allWrappedContent = append(allWrappedContent, wrappedLine)
-
-			wrappedContentIdxToContentIdx[wrappedContentIdx] = contentIdx
-			if _, exists := contentIdxToFirstWrappedContentIdx[contentIdx]; !exists {
-				contentIdxToFirstWrappedContentIdx[contentIdx] = wrappedContentIdx
-			}
-
-			wrappedContentIdx++
-		}
-	}
-	m.wrappedContent = allWrappedContent
-	m.wrappedContentIdxToContentIdx = wrappedContentIdxToContentIdx
-	m.contentIdxToFirstWrappedContentIdx = contentIdxToFirstWrappedContentIdx
-	m.contentIdxToHeight = contentIdxToHeight
-}
+//func (m *Model[T]) updateWrappedContent() {
+//	var allWrappedContent []string
+//	wrappedContentIdxToContentIdx := make(map[int]int)
+//	contentIdxToFirstWrappedContentIdx := make(map[int]int)
+//	contentIdxToHeight := make(map[int]int)
+//
+//	var wrappedContentIdx int
+//	for contentIdx, item := range m.content {
+//		line := item.Render()
+//		wrappedLinesForLine := m.getWrappedLines(line)
+//		contentIdxToHeight[contentIdx] = len(wrappedLinesForLine)
+//		for _, wrappedLine := range wrappedLinesForLine {
+//			allWrappedContent = append(allWrappedContent, wrappedLine)
+//
+//			wrappedContentIdxToContentIdx[wrappedContentIdx] = contentIdx
+//			if _, exists := contentIdxToFirstWrappedContentIdx[contentIdx]; !exists {
+//				contentIdxToFirstWrappedContentIdx[contentIdx] = wrappedContentIdx
+//			}
+//
+//			wrappedContentIdx++
+//		}
+//	}
+//	m.wrappedContent = allWrappedContent
+//	m.wrappedContentIdxToContentIdx = wrappedContentIdxToContentIdx
+//	m.contentIdxToFirstWrappedContentIdx = contentIdxToFirstWrappedContentIdx
+//	m.contentIdxToHeight = contentIdxToHeight
+//}
 
 func (m *Model[T]) updateForHeaderAndContent() {
 	m.updateContentHeight()
@@ -395,7 +404,7 @@ func (m *Model[T]) updateForHeaderAndContent() {
 
 func (m *Model[T]) updateWrapText() {
 	m.updateContentHeight()
-	m.updateWrappedContent()
+	//m.updateWrappedContent()
 	m.ResetHorizontalOffset()
 	m.fixViewForSelection()
 	m.updateMaxVisibleLineLength()
@@ -414,7 +423,7 @@ func (m *Model[T]) updateMaxVisibleLineLength() {
 func (m *Model[T]) setWidthAndHeight(width, height int) {
 	m.width, m.height = width, height
 	m.updateWrappedHeader()
-	m.updateWrappedContent()
+	//m.updateWrappedContent()
 }
 
 func (m *Model[T]) fixViewForSelection() {
@@ -491,10 +500,6 @@ func (m Model[T]) getHeader() []string {
 	return m.header
 }
 
-func (m Model[T]) getContent() []T {
-	return m.content
-}
-
 func (m Model[T]) getContentStrings(start, end int) []string {
 	if m.wrapText {
 		if end == -1 {
@@ -505,9 +510,9 @@ func (m Model[T]) getContentStrings(start, end int) []string {
 
 	var contentStrings []string
 	if end == -1 {
-		end = len(m.content)
+		end = m.contentProvider.Len()
 	}
-	for _, item := range m.content[start:end] {
+	for _, item := range m.contentProvider.TakeN(start, end-start) {
 		contentStrings = append(contentStrings, item.Render())
 	}
 	return contentStrings
@@ -517,7 +522,7 @@ func (m Model[T]) getLenContentStrings() int {
 	if m.wrapText {
 		return len(m.wrappedContent)
 	}
-	return len(m.content)
+	return m.contentProvider.Len()
 }
 
 // lastVisibleLineIdx returns the maximum visible line index
@@ -538,7 +543,7 @@ func (m *Model[T]) maxVisibleLineIdx() int {
 }
 
 func (m Model[T]) maxContentIdx() int {
-	return len(m.content) - 1
+	return m.contentProvider.Len() - 1
 }
 
 // getVisibleLines retrieves the visible content based on the yOffset and contentHeight
@@ -611,12 +616,15 @@ func (m Model[T]) getNumVisibleItems() int {
 }
 
 func (m Model[T]) lastContentItemSelected() bool {
-	return m.selectedContentIdx == len(m.content)-1
+	return m.selectedContentIdx == m.contentProvider.Len()-1
 }
 
 func (m Model[T]) getFooter() (string, int) {
+	dev.Debug("HERE")
 	numerator := m.selectedContentIdx + 1
-	denominator := len(m.content)
+	dev.Debug(fmt.Sprintf("numerator: %d", numerator))
+	denominator := m.contentProvider.Len()
+	dev.Debug(fmt.Sprintf("denominator: %d", denominator))
 	totalNumLines := m.getLenContentStrings()
 
 	// if selection is disabled, percentage should show from the bottom of the visible content
