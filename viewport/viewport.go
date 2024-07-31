@@ -34,6 +34,7 @@ type Renderable interface {
 type Model[T Renderable] struct {
 	KeyMap                    KeyMap
 	LineContinuationIndicator string
+	BackgroundStyle           lipgloss.Style
 	HeaderStyle               lipgloss.Style
 	SelectedContentStyle      lipgloss.Style
 	HighlightStyle            lipgloss.Style
@@ -85,6 +86,7 @@ func New[T Renderable](width, height int) (m Model[T]) {
 
 	m.KeyMap = DefaultKeyMap()
 	m.LineContinuationIndicator = "..."
+	m.BackgroundStyle = regular
 	m.HeaderStyle = defaultViewportHeaderStyle
 	m.SelectedContentStyle = defaultViewportSelectedRowStyle
 	m.HighlightStyle = defaultViewportHighlightStyle
@@ -230,7 +232,7 @@ func (m Model[T]) View() string {
 		viewString += strings.Repeat("\n", padCount)
 		viewString += footerString
 	}
-	renderedViewString := regular.Width(m.width).Height(m.height).Render(viewString)
+	renderedViewString := m.BackgroundStyle.Width(m.width).Height(m.height).Render(viewString)
 
 	return renderedViewString
 }
@@ -308,7 +310,7 @@ func (m Model[T]) GetSelectedContentIdx() int {
 
 // GetSelectedContent returns the currently selected content, or nil if there is none
 func (m Model[T]) GetSelectedContent() *T {
-	if m.selectedContentIdx < 0 || m.selectedContentIdx >= len(m.content) {
+	if m.selectedContentIdx >= len(m.content) || m.selectedContentIdx < 0 {
 		return nil
 	}
 	return &m.content[m.selectedContentIdx]
@@ -493,15 +495,29 @@ func (m Model[T]) getContent() []T {
 	return m.content
 }
 
-func (m Model[T]) getContentStrings() []string {
+func (m Model[T]) getContentStrings(start, end int) []string {
+	if m.wrapText {
+		if end == -1 {
+			end = len(m.wrappedContent)
+		}
+		return m.wrappedContent[start:end]
+	}
+
 	var contentStrings []string
-	for _, item := range m.content {
+	if end == -1 {
+		end = len(m.content)
+	}
+	for _, item := range m.content[start:end] {
 		contentStrings = append(contentStrings, item.Render())
 	}
-	if m.wrapText {
-		return m.wrappedContent
-	}
 	return contentStrings
+}
+
+func (m Model[T]) getLenContentStrings() int {
+	if m.wrapText {
+		return len(m.wrappedContent)
+	}
+	return len(m.content)
 }
 
 // lastVisibleLineIdx returns the maximum visible line index
@@ -514,11 +530,11 @@ func (m Model[T]) maxYOffset() int {
 	if m.maxVisibleLineIdx() < m.contentHeight {
 		return 0
 	}
-	return len(m.getContentStrings()) - m.contentHeight
+	return m.getLenContentStrings() - m.contentHeight
 }
 
 func (m *Model[T]) maxVisibleLineIdx() int {
-	return len(m.getContentStrings()) - 1
+	return m.getLenContentStrings() - 1
 }
 
 func (m Model[T]) maxContentIdx() int {
@@ -531,9 +547,9 @@ func (m Model[T]) getVisibleLines() []string {
 	start := max(0, min(maxVisibleLineIdx, m.yOffset))
 	end := start + m.contentHeight
 	if end > maxVisibleLineIdx {
-		return m.getContentStrings()[start:]
+		return m.getContentStrings(start, -1)
 	}
-	return m.getContentStrings()[start:end]
+	return m.getContentStrings(start, end)
 }
 
 func (m Model[T]) getVisiblePartOfLine(line string) string {
@@ -601,7 +617,7 @@ func (m Model[T]) lastContentItemSelected() bool {
 func (m Model[T]) getFooter() (string, int) {
 	numerator := m.selectedContentIdx + 1
 	denominator := len(m.content)
-	totalNumLines := len(m.getContentStrings())
+	totalNumLines := m.getLenContentStrings()
 
 	// if selection is disabled, percentage should show from the bottom of the visible content
 	// such that panning the view to the bottom shows 100%
