@@ -1,6 +1,6 @@
 module github.com/robinovitch61/bubbleo
 
-go 1.18
+go 1.21
 
 require (
 	github.com/charmbracelet/bubbles v0.18.0
