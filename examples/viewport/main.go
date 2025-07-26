@@ -3,23 +3,86 @@ package main
 // An example program demonstrating the viewport component
 
 import (
+	_ "embed"
 	"fmt"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/robinovitch61/bubbleo/viewport/linebuffer"
 	"os"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/robinovitch61/bubbleo/viewport"
 )
+
+//go:embed example.txt
+var exampleContent string
+
+var keyMap = viewport.KeyMap{
+	PageDown: key.NewBinding(
+		key.WithKeys("pgdown", "f", "ctrl+f"),
+		key.WithHelp("f", "pgdn"),
+	),
+	PageUp: key.NewBinding(
+		key.WithKeys("pgup", "b", "ctrl+b"),
+		key.WithHelp("b", "pgup"),
+	),
+	HalfPageUp: key.NewBinding(
+		key.WithKeys("u", "ctrl+u"),
+		key.WithHelp("u", "½ page up"),
+	),
+	HalfPageDown: key.NewBinding(
+		key.WithKeys("d", "ctrl+d"),
+		key.WithHelp("d", "½ page down"),
+	),
+	Up: key.NewBinding(
+		key.WithKeys("up", "k"),
+		key.WithHelp("↑/k", "scroll up"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("down", "j"),
+		key.WithHelp("↓/j", "scroll down"),
+	),
+	Left: key.NewBinding(
+		key.WithKeys("left"),
+		key.WithHelp("←", "left"),
+	),
+	Right: key.NewBinding(
+		key.WithKeys("right"),
+		key.WithHelp("→", "right"),
+	),
+	Top: key.NewBinding(
+		key.WithKeys("g", "ctrl+g"),
+		key.WithHelp("g", "top"),
+	),
+	Bottom: key.NewBinding(
+		key.WithKeys("shift+g"),
+		key.WithHelp("G", "bottom"),
+	),
+}
+
+var styles = viewport.Styles{
+	FooterStyle:              lipgloss.NewStyle(),
+	HighlightStyle:           lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Background(lipgloss.Color("2")),
+	HighlightStyleIfSelected: lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Background(lipgloss.Color("3")),
+	SelectedItemStyle:        lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Background(lipgloss.Color("2")),
+}
 
 // RenderableString is a simple type that wraps a string and implements the Renderable interface
 type RenderableString struct {
 	content string
 }
 
-func (r RenderableString) Render() string {
-	return r.content
+func (r RenderableString) Render() linebuffer.LineBufferer {
+	return linebuffer.New(r.content)
+}
+
+func (r RenderableString) Equals(other interface{}) bool {
+	otherStr, ok := other.(RenderableString)
+	if !ok {
+		return false
+	}
+	return r.content == otherStr.content
 }
 
 type model struct {
@@ -58,7 +121,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// we can initialize the viewport. The initial dimensions come in
 			// quickly, though asynchronously, which is why we wait for them
 			// here.
-			m.viewport = viewport.New[RenderableString](msg.Width-2, msg.Height-5-2)
+			m.viewport = viewport.New[RenderableString](msg.Width-2, msg.Height-5-2, keyMap, styles)
 			m.viewport.SetContent(m.lines)
 			m.viewport.SetSelectionEnabled(false)
 			m.viewport.SetStringToHighlight("surf")
@@ -85,16 +148,16 @@ func (m model) View() string {
 		m.viewport.GetWrapText(),
 		m.viewport.GetSelectionEnabled(),
 		[]key.Binding{
-			m.viewport.KeyMap.PageDown,
-			m.viewport.KeyMap.PageUp,
-			m.viewport.KeyMap.HalfPageUp,
-			m.viewport.KeyMap.HalfPageDown,
-			m.viewport.KeyMap.Up,
-			m.viewport.KeyMap.Down,
-			m.viewport.KeyMap.Left,
-			m.viewport.KeyMap.Right,
-			m.viewport.KeyMap.Top,
-			m.viewport.KeyMap.Bottom,
+			keyMap.PageDown,
+			keyMap.PageUp,
+			keyMap.HalfPageUp,
+			keyMap.HalfPageDown,
+			keyMap.Up,
+			keyMap.Down,
+			keyMap.Left,
+			keyMap.Right,
+			keyMap.Top,
+			keyMap.Bottom,
 		},
 	), "\n")
 	return lipgloss.JoinVertical(
@@ -124,14 +187,7 @@ func getShortHelp(bindings []key.Binding) string {
 }
 
 func main() {
-	// Load some text for our viewport
-	content, err := os.ReadFile("example.txt")
-	if err != nil {
-		fmt.Println("could not load file:", err)
-		os.Exit(1)
-	}
-
-	lines := strings.Split(string(content), "\n")
+	lines := strings.Split(exampleContent, "\n")
 	renderableLines := make([]RenderableString, len(lines))
 	for i, line := range lines {
 		renderableLines[i] = RenderableString{content: line}
