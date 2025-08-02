@@ -2,11 +2,11 @@ package viewport
 
 import "github.com/robinovitch61/bubbleo/viewport/linebuffer"
 
-type RenderableComparable interface {
+type Renderable interface {
 	Render() linebuffer.LineBufferer
-	Equals(other interface{}) bool
 }
 
+// RenderableString is a convenience type
 type RenderableString struct {
 	LineBuffer linebuffer.LineBufferer
 }
@@ -15,16 +15,13 @@ func (r RenderableString) Render() linebuffer.LineBufferer {
 	return r.LineBuffer
 }
 
-func (r RenderableString) Equals(other interface{}) bool {
-	otherStr, ok := other.(RenderableString)
-	if !ok {
+// RenderableStringCompareFn is a comparator function for renderableString
+func RenderableStringCompareFn(a, b RenderableString) bool {
+	if a.LineBuffer == nil || b.LineBuffer == nil {
 		return false
 	}
-	if r.LineBuffer == nil || otherStr.LineBuffer == nil {
-		return false
-	}
-	return r.LineBuffer.Content() == otherStr.LineBuffer.Content()
+	return a.LineBuffer.Content() == b.LineBuffer.Content()
 }
 
-// assert RenderableString implements viewport.RenderableComparable
-var _ RenderableComparable = RenderableString{}
+// assert RenderableString implements viewport.Renderable
+var _ Renderable = RenderableString{}

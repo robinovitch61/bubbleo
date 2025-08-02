@@ -1629,7 +1629,7 @@ func TestViewport_SelectionOn_WrapOff_MaintainSelection(t *testing.T) {
 	vp := newViewport(w, h)
 	vp.SetHeader([]string{"header"})
 	vp.SetSelectionEnabled(true)
-	vp.SetMaintainSelection(true)
+	vp.SetSelectionComparator(RenderableStringCompareFn)
 	setContent(&vp, []string{
 		"sixth",
 		"seventh",
@@ -1716,7 +1716,7 @@ func TestViewport_SelectionOn_WrapOff_StickyTop(t *testing.T) {
 	vp.SetHeader([]string{"header"})
 	vp.SetSelectionEnabled(true)
 	// stickyness should override maintain selection
-	vp.SetMaintainSelection(true)
+	vp.SetSelectionComparator(RenderableStringCompareFn)
 	vp.SetTopSticky(true)
 	setContent(&vp, []string{
 		"first",
@@ -1771,7 +1771,7 @@ func TestViewport_SelectionOn_WrapOff_StickyBottom(t *testing.T) {
 	vp.SetHeader([]string{"header"})
 	vp.SetSelectionEnabled(true)
 	// stickyness should override maintain selection
-	vp.SetMaintainSelection(true)
+	vp.SetSelectionComparator(RenderableStringCompareFn)
 	vp.SetBottomSticky(true)
 	setContent(&vp, []string{
 		"first",
@@ -1826,7 +1826,7 @@ func TestViewport_SelectionOn_WrapOff_StickyBottomOverflowHeight(t *testing.T) {
 	vp.SetHeader([]string{"header"})
 	vp.SetSelectionEnabled(true)
 	// stickyness should override maintain selection
-	vp.SetMaintainSelection(true)
+	vp.SetSelectionComparator(RenderableStringCompareFn)
 	vp.SetBottomSticky(true)
 
 	// test covers case where first set content to empty, then overflow height
@@ -1856,7 +1856,7 @@ func TestViewport_SelectionOn_WrapOff_StickyTopBottom(t *testing.T) {
 	vp.SetHeader([]string{"header"})
 	vp.SetSelectionEnabled(true)
 	// stickyness should override maintain selection
-	vp.SetMaintainSelection(true)
+	vp.SetSelectionComparator(RenderableStringCompareFn)
 	vp.SetTopSticky(true)
 	vp.SetBottomSticky(true)
 	setContent(&vp, []string{
@@ -3959,7 +3959,7 @@ func TestViewport_SelectionOn_WrapOn_MaintainSelection(t *testing.T) {
 	vp.SetHeader([]string{"header"})
 	vp.SetWrapText(true)
 	vp.SetSelectionEnabled(true)
-	vp.SetMaintainSelection(true)
+	vp.SetSelectionComparator(RenderableStringCompareFn)
 	setContent(&vp, []string{
 		"sixth item",
 		"seventh item",
@@ -4051,7 +4051,7 @@ func TestViewport_SelectionOn_WrapOn_StickyTop(t *testing.T) {
 	vp.SetWrapText(true)
 	vp.SetSelectionEnabled(true)
 	// stickyness should override maintain selection
-	vp.SetMaintainSelection(true)
+	vp.SetSelectionComparator(RenderableStringCompareFn)
 	vp.SetTopSticky(true)
 	setContent(&vp, []string{
 		"the first line",
@@ -4109,7 +4109,7 @@ func TestViewport_SelectionOn_WrapOn_StickyBottom(t *testing.T) {
 	vp.SetWrapText(true)
 	vp.SetSelectionEnabled(true)
 	// stickyness should override maintain selection
-	vp.SetMaintainSelection(true)
+	vp.SetSelectionComparator(RenderableStringCompareFn)
 	vp.SetBottomSticky(true)
 	setContent(&vp, []string{
 		"the first line",
@@ -4189,7 +4189,7 @@ func TestViewport_SelectionOn_WrapOn_StickyBottomOverflowHeight(t *testing.T) {
 	vp.SetWrapText(true)
 	vp.SetSelectionEnabled(true)
 	// stickyness should override maintain selection
-	vp.SetMaintainSelection(true)
+	vp.SetSelectionComparator(RenderableStringCompareFn)
 	vp.SetBottomSticky(true)
 
 	// test covers case where first set content to empty, then overflow height
@@ -4220,7 +4220,7 @@ func TestViewport_SelectionOn_WrapOn_StickyTopBottom(t *testing.T) {
 	vp.SetWrapText(true)
 	vp.SetSelectionEnabled(true)
 	// stickyness should override maintain selection
-	vp.SetMaintainSelection(true)
+	vp.SetSelectionComparator(RenderableStringCompareFn)
 	vp.SetTopSticky(true)
 	vp.SetBottomSticky(true)
 	setContent(&vp, []string{
@@ -4304,7 +4304,7 @@ func TestViewport_SelectionOn_WrapOn_StickyBottomLongLine(t *testing.T) {
 	vp.SetWrapText(true)
 	vp.SetSelectionEnabled(true)
 	// stickyness should override maintain selection
-	vp.SetMaintainSelection(true)
+	vp.SetSelectionComparator(RenderableStringCompareFn)
 	vp.SetBottomSticky(true)
 	setContent(&vp, []string{
 		"first line",

@@ -44,8 +44,10 @@ type Styles struct {
 	SelectedItemStyle        lipgloss.Style
 }
 
+type CompareFn[T any] func(a, b T) bool
+
 // Model represents a viewport component
-type Model[T RenderableComparable] struct {
+type Model[T Renderable] struct {
 	// styles contains styling configuration for the viewport
 	styles Styles
 
@@ -80,8 +82,9 @@ type Model[T RenderableComparable] struct {
 	// bottomSelectionSticky is true when selection should remain at the bottom until user manually scrolls up
 	bottomSelectionSticky bool
 
-	// maintainSelection is true if the viewport should try to maintain the current selection when allItems is added or removed
-	maintainSelection bool
+	// compareFn is an optional function to compare items for maintaining the selection when content changes
+	// If set, the viewport will try to maintain the previous selected item when content changes
+	compareFn CompareFn[T]
 
 	// selectedItemIdx is the index of allItems of the current selection (only relevant when selectionEnabled is true)
 	selectedItemIdx int
@@ -103,7 +106,7 @@ type Model[T RenderableComparable] struct {
 }
 
 // New creates a new viewport model with reasonable defaults
-func New[T RenderableComparable](width, height int, keyMap KeyMap, styles Styles) (m Model[T]) {
+func New[T Renderable](width, height int, keyMap KeyMap, styles Styles) (m Model[T]) {
 	m.setWidthHeight(width, height)
 
 	m.selectionEnabled = false
@@ -291,7 +294,7 @@ func (m *Model[T]) SetContent(content []T) {
 			stayAtTop = true
 		} else if m.bottomSelectionSticky && (len(m.allItems) == 0 || (m.selectedItemIdx == len(m.allItems)-1)) {
 			stayAtBottom = true
-		} else if m.maintainSelection && 0 <= m.selectedItemIdx && m.selectedItemIdx < len(m.allItems) {
+		} else if m.compareFn != nil && 0 <= m.selectedItemIdx && m.selectedItemIdx < len(m.allItems) {
 			prevSelection = m.allItems[m.selectedItemIdx]
 		}
 	}
@@ -309,11 +312,11 @@ func (m *Model[T]) SetContent(content []T) {
 		} else if stayAtBottom {
 			m.selectedItemIdx = max(0, len(m.allItems)-1)
 			m.scrollSoSelectionInView()
-		} else if m.maintainSelection {
+		} else if m.compareFn != nil {
 			// TODO: could flag when content is sorted & comparable and use binary search instead
 			found := false
 			for i := range m.allItems {
-				if m.allItems[i].Equals(prevSelection) {
+				if m.compareFn(m.allItems[i], prevSelection) {
 					m.selectedItemIdx = i
 					found = true
 					break
@@ -355,9 +358,10 @@ func (m *Model[T]) SetFooterEnabled(footerEnabled bool) {
 	m.footerEnabled = footerEnabled
 }
 
-// SetMaintainSelection sets whether the viewport should try to maintain the current selection when content changes
-func (m *Model[T]) SetMaintainSelection(maintainSelection bool) {
-	m.maintainSelection = maintainSelection
+// SetSelectionComparator sets the comparator function for maintaining the current selection when content changes.
+// If compareFn is non-nil, the viewport will try to maintain the current selection when content changes.
+func (m *Model[T]) SetSelectionComparator(compareFn CompareFn[T]) {
+	m.compareFn = compareFn
 }
 
 // GetSelectionEnabled returns whether the viewport allows line selection
