@@ -944,3 +944,31 @@ func toLineBuffers(lines []string) []linebuffer.LineBufferer {
 	}
 	return res
 }
+
+func percent(a, b int) int {
+	return int(float32(a) / float32(b) * 100)
+}
+
+func safeSliceUpToIdx[T any](s []T, i int) []T {
+	if i > len(s) {
+		return s
+	}
+	if i < 0 {
+		return []T{}
+	}
+	return s[:i]
+}
+
+func safeSliceFromIdx(s []string, i int) []string {
+	if i < 0 {
+		return s
+	}
+	if i > len(s) {
+		return []string{}
+	}
+	return s[i:]
+}
+
+func clampValMinMax(v, minimum, maximum int) int {
+	return max(minimum, min(maximum, v))
+}
