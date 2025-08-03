@@ -161,20 +161,25 @@ func (m *Model[T]) Update(msg tea.Msg) (Model[T], tea.Cmd) {
 
 // View renders the viewport
 func (m *Model[T]) View() string {
-	var viewString string
+	var builder strings.Builder
 
 	visibleHeaderLines := m.getVisibleHeaderLines()
+	visibleContentLines := m.getVisibleContentLines()
+
+	// pre-allocate capacity based on estimated size
+	estimatedSize := (len(visibleHeaderLines) + len(visibleContentLines.lines) + 10) * (m.display.Bounds.Width + 1)
+	builder.Grow(estimatedSize)
+
 	for i := range visibleHeaderLines {
 		lineBuffer := linebuffer.New(visibleHeaderLines[i])
 		line, _ := lineBuffer.Take(0, m.display.Bounds.Width, m.config.ContinuationIndicator, "", lipgloss.NewStyle())
-		viewString += line + "\n"
+		builder.WriteString(line)
+		builder.WriteByte('\n')
 	}
 
-	visibleContentLines := m.getVisibleContentLines()
-
-	var truncated string
 	truncatedVisibleContentLines := make([]string, len(visibleContentLines.lines))
 	for i := range visibleContentLines.lines {
+		var truncated string
 		if m.config.WrapText {
 			truncated = visibleContentLines.lines[i].Content()
 		} else {
@@ -211,20 +216,26 @@ func (m *Model[T]) View() string {
 	}
 
 	for i := range truncatedVisibleContentLines {
-		viewString += truncatedVisibleContentLines[i] + "\n"
+		builder.WriteString(truncatedVisibleContentLines[i])
+		builder.WriteByte('\n')
 	}
 
 	nVisibleLines := len(visibleContentLines.lines)
 	if visibleContentLines.showFooter {
 		// pad so footer shows up at bottom
 		padCount := max(0, m.getNumContentLines()-nVisibleLines-1) // 1 for footer itself
-		viewString += strings.Repeat("\n", padCount)
-		viewString += m.getTruncatedFooterLine(visibleContentLines)
+		for i := 0; i < padCount; i++ {
+			builder.WriteByte('\n')
+		}
+		builder.WriteString(m.getTruncatedFooterLine(visibleContentLines))
 	} else {
-		viewString = strings.TrimSuffix(viewString, "\n")
+		if builder.Len() > 0 {
+			content := builder.String()
+			return m.display.RenderFinalView(strings.TrimSuffix(content, "\n"))
+		}
 	}
 
-	return m.display.RenderFinalView(viewString)
+	return m.display.RenderFinalView(builder.String())
 }
 
 func (m *Model[T]) SetKeyMap(keyMap KeyMap) {
