@@ -77,14 +77,6 @@ func (r RenderableString) Render() linebuffer.LineBufferer {
 	return linebuffer.New(r.content)
 }
 
-func (r RenderableString) Equals(other interface{}) bool {
-	otherStr, ok := other.(RenderableString)
-	if !ok {
-		return false
-	}
-	return r.content == otherStr.content
-}
-
 type model struct {
 	lines    []RenderableString
 	ready    bool

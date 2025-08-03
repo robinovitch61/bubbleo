@@ -16,7 +16,7 @@ repos:
 
       - id: go-test
         name: Test Go Code
-        entry: go test -short ./...
+        entry: go test ./...
         language: golang
         pass_filenames: false  # run on the entire project, not just staged files
 

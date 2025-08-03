@@ -5,72 +5,114 @@ import (
 	"testing"
 )
 
-// Example of interpreting output of `go test -v -bench=. -run=^$ -benchmem ./internal/linebuffer`
-// BenchmarkNewLongLine-8    7842	    152640 ns/op	  904063 B/op	       8 allocs/op
-// - 7842: benchmark ran 7,842 iterations to get a stable measurement
-// - 152640 ns/op: each call to New() takes about 153 microseconds
-// - 904063 B/op: each operation allocates about 904KB of memory
-// - 8 allocs/op: each call to New() makes 8 distinct memory allocations
+// To run benchmarks:
+// - All: go test -bench=. -benchmem -run=^$ ./viewport/linebuffer
+// - Plain text only: go test -bench=BenchmarkNew_Plain -benchmem -run=^$ ./viewport/linebuffer
+// - ANSI only: go test -bench=BenchmarkNew_ANSI -benchmem -run=^$ ./viewport/linebuffer
+// - Unicode only: go test -bench=BenchmarkNew_Unicode -benchmem -run=^$ ./viewport/linebuffer
+//
+// Example of interpreting benchmark output:
+// BenchmarkNew_Plain_1000-8    156124	      7883 ns/op	    8448 B/op	       3 allocs/op
+// - 156124: benchmark ran 156,124 iterations to get a stable measurement
+// - 7883 ns/op: each call to New() takes about 7.9 microseconds
+// - 8448 B/op: each operation allocates about 8.4KB of memory
+// - 3 allocs/op: each call to New() makes 3 distinct memory allocations
 
-func TestMemoryOverhead(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
-
-	sizes := []int{10, 100, 1000, 10000}
-	for _, size := range sizes {
-		baseString := strings.Repeat("h", size)
-		result := testing.Benchmark(func(b *testing.B) {
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				_ = New(baseString)
-			}
-		})
-
-		bytesPerOp := float64(result.MemBytes) / float64(result.N)
-		ratio := bytesPerOp / float64(size)
-		t.Logf("Size %d - Overhead ratio: %.1fx", size, ratio)
+// BenchmarkNew_Plain benchmarks New() with plain text strings of various sizes
+func BenchmarkNew_Plain_10(b *testing.B) {
+	baseString := strings.Repeat("h", 10)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = New(baseString)
 	}
 }
 
-func TestMemoryOverheadWithAnsi(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
-
-	sizes := []int{10, 100, 1000, 10000}
-	for _, size := range sizes {
-		baseString := strings.Repeat("\x1b[31mh\x1b[0m", size)
-		result := testing.Benchmark(func(b *testing.B) {
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				_ = New(baseString)
-			}
-		})
-
-		bytesPerOp := float64(result.MemBytes) / float64(result.N)
-		ratio := bytesPerOp / float64(size)
-		t.Logf("Size %d - Overhead ratio: %.1fx", size, ratio)
+func BenchmarkNew_Plain_100(b *testing.B) {
+	baseString := strings.Repeat("h", 100)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = New(baseString)
 	}
 }
 
-func TestMemoryOverheadWithUnicode(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
+func BenchmarkNew_Plain_1000(b *testing.B) {
+	baseString := strings.Repeat("h", 1000)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = New(baseString)
 	}
+}
 
-	sizes := []int{10, 100, 1000, 10000}
-	for _, size := range sizes {
-		baseString := strings.Repeat("世", size)
-		result := testing.Benchmark(func(b *testing.B) {
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				_ = New(baseString)
-			}
-		})
+func BenchmarkNew_Plain_10000(b *testing.B) {
+	baseString := strings.Repeat("h", 10000)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = New(baseString)
+	}
+}
 
-		bytesPerOp := float64(result.MemBytes) / float64(result.N)
-		ratio := bytesPerOp / float64(size)
-		t.Logf("Size %d - Overhead ratio: %.1fx", size, ratio)
+// BenchmarkNew_ANSI benchmarks New() with ANSI-styled strings of various sizes
+func BenchmarkNew_ANSI_10(b *testing.B) {
+	baseString := strings.Repeat("\x1b[31mh\x1b[0m", 10)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = New(baseString)
+	}
+}
+
+func BenchmarkNew_ANSI_100(b *testing.B) {
+	baseString := strings.Repeat("\x1b[31mh\x1b[0m", 100)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = New(baseString)
+	}
+}
+
+func BenchmarkNew_ANSI_1000(b *testing.B) {
+	baseString := strings.Repeat("\x1b[31mh\x1b[0m", 1000)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = New(baseString)
+	}
+}
+
+func BenchmarkNew_ANSI_10000(b *testing.B) {
+	baseString := strings.Repeat("\x1b[31mh\x1b[0m", 10000)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = New(baseString)
+	}
+}
+
+// BenchmarkNew_Unicode benchmarks New() with Unicode strings of various sizes
+func BenchmarkNew_Unicode_10(b *testing.B) {
+	baseString := strings.Repeat("世", 10)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = New(baseString)
+	}
+}
+
+func BenchmarkNew_Unicode_100(b *testing.B) {
+	baseString := strings.Repeat("世", 100)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = New(baseString)
+	}
+}
+
+func BenchmarkNew_Unicode_1000(b *testing.B) {
+	baseString := strings.Repeat("世", 1000)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = New(baseString)
+	}
+}
+
+func BenchmarkNew_Unicode_10000(b *testing.B) {
+	baseString := strings.Repeat("世", 10000)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = New(baseString)
 	}
 }
