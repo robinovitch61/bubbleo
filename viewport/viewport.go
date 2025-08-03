@@ -319,7 +319,15 @@ func (m *Model[T]) SetBottomSticky(bottomSticky bool) {
 
 // SetSelectionEnabled sets whether the viewport allows line selection
 func (m *Model[T]) SetSelectionEnabled(selectionEnabled bool) {
+	wasEnabled := m.navigation.SelectionEnabled
 	m.navigation.SelectionEnabled = selectionEnabled
+
+	// when enabling selection, set the selected item to the top visible item and ensure the top line is in view
+	if selectionEnabled && !wasEnabled && !m.content.IsEmpty() {
+		topVisibleItemIdx := clampValMinMax(m.display.TopItemIdx, 0, m.content.NumItems()-1)
+		m.content.SetSelectedIdx(topVisibleItemIdx)
+		m.scrollSoSelectionInView()
+	}
 }
 
 // SetFooterEnabled sets whether the viewport shows the footer when it overflows

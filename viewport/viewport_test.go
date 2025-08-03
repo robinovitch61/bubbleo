@@ -893,6 +893,29 @@ func TestViewport_SelectionOff_WrapOff_StringToHighlightAnsiUnicode(t *testing.T
 	internal.CmpStr(t, expectedView, vp.View())
 }
 
+func TestViewport_SelectionOff_WrapOff_SetSelectionEnabled_SetsTopVisibleItem(t *testing.T) {
+	w, h := 15, 4
+	vp := newViewport(w, h)
+	setContent(&vp, []string{
+		"first",
+		"second",
+		"third",
+		"fourth",
+		"fifth",
+		"sixth",
+	})
+	vp, _ = vp.Update(downKeyMsg)
+	vp, _ = vp.Update(downKeyMsg)
+	vp.SetSelectionEnabled(true)
+	expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"\x1b[38;2;0;0;255mthird\x1b[m",
+		"fourth",
+		"fifth",
+		"50% (3/6)",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+}
+
 // # SELECTION ENABLED, WRAP OFF
 
 func TestViewport_SelectionOn_WrapOff_Empty(t *testing.T) {
@@ -3209,6 +3232,35 @@ func TestViewport_SelectionOff_WrapOn_StringToHighlightAnsiUnicode(t *testing.T)
 		"A💖\x1b[38;2;0;255;0m中é\x1b[mA💖",
 		"\x1b[38;2;0;255;0m中é\x1b[m",
 		"100% (2/2)",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+}
+
+func TestViewport_SelectionOff_WrapOn_EnableSelectionShowsTopLineInItem(t *testing.T) {
+	w, h := 10, 4
+	vp := newViewport(w, h)
+	vp.SetWrapText(true)
+	setContent(&vp, []string{
+		"short",
+		"this is a very long line",
+		"another short line",
+		"final line",
+	})
+	vp, _ = vp.Update(downKeyMsg)
+	vp, _ = vp.Update(downKeyMsg)
+	expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"very long ",
+		"line",
+		"another sh",
+		"75% (3/4)",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+	vp.SetSelectionEnabled(true)
+	expectedView = pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"\x1b[38;2;0;0;255mthis is a \x1b[m",
+		"\x1b[38;2;0;0;255mvery long \x1b[m",
+		"\x1b[38;2;0;0;255mline\x1b[m",
+		"50% (2/4)",
 	})
 	internal.CmpStr(t, expectedView, vp.View())
 }
