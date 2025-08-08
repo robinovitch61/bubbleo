@@ -21,6 +21,7 @@ type ContentManager[T Renderable] struct {
 	CompareFn CompareFn[T]
 }
 
+// NewContentManager creates a new ContentManager with empty initial state.
 func NewContentManager[T Renderable]() *ContentManager[T] {
 	return &ContentManager[T]{
 		Items:       []T{},
@@ -29,14 +30,17 @@ func NewContentManager[T Renderable]() *ContentManager[T] {
 	}
 }
 
+// SetSelectedIdx sets the selected item index.
 func (cm *ContentManager[T]) SetSelectedIdx(idx int) {
-	cm.selectedIdx = clampValMinMax(idx, 0, len(cm.Items)-1)
+	cm.selectedIdx = clampValZeroToMax(idx, len(cm.Items)-1)
 }
 
+// GetSelectedIdx returns the current selected item index.
 func (cm *ContentManager[T]) GetSelectedIdx() int {
 	return cm.selectedIdx
 }
 
+// GetSelectedItem returns a pointer to the currently selected item, or nil if none selected.
 func (cm *ContentManager[T]) GetSelectedItem() *T {
 	if cm.selectedIdx >= len(cm.Items) || cm.selectedIdx < 0 {
 		return nil
@@ -44,19 +48,21 @@ func (cm *ContentManager[T]) GetSelectedItem() *T {
 	return &cm.Items[cm.selectedIdx]
 }
 
+// NumItems returns the total number of items.
 func (cm *ContentManager[T]) NumItems() int {
 	return len(cm.Items)
 }
 
+// IsEmpty returns true if there are no items.
 func (cm *ContentManager[T]) IsEmpty() bool {
 	return len(cm.Items) == 0
 }
 
+// ValidateSelectedIdx ensures the selected index is within valid bounds.
 func (cm *ContentManager[T]) ValidateSelectedIdx() {
 	if len(cm.Items) == 0 {
 		cm.selectedIdx = 0
 		return
 	}
-	cm.selectedIdx = clampValMinMax(cm.selectedIdx, 0, len(cm.Items)-1)
+	cm.selectedIdx = clampValZeroToMax(cm.selectedIdx, len(cm.Items)-1)
 }
-

@@ -4,6 +4,7 @@ import (
 	"github.com/charmbracelet/lipgloss/v2"
 )
 
+// LineBufferer defines the interface for line buffer implementations.
 type LineBufferer interface {
 	// Width returns the total width in terminal cells
 	Width() int
@@ -13,8 +14,10 @@ type LineBufferer interface {
 	// continuation replaces the start and end if the content exceeds the bounds of widthToLeft to widthToLeft + takeWidth
 	// toHighlight is a substring to highlight, and highlightStyle is the style to apply to it
 	Take(
-		widthToLeft, takeWidth int,
-		continuation, toHighlight string,
+		widthToLeft,
+		takeWidth int,
+		continuation,
+		toHighlight string,
 		highlightStyle lipgloss.Style,
 	) (string, int)
 	// WrappedLines returns the content as a slice of strings, wrapping at width

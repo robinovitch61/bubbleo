@@ -1,6 +1,10 @@
-.PHONY: all test lint build bench fmt
+.PHONY: all test lint build bench fmt goimports
 
-all: lint test build
+all: goimports lint test build
+
+# Run goimports formatting
+goimports:
+	goimports -w .
 
 # Run linting
 lint:

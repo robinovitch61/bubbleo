@@ -1,10 +1,11 @@
 package linebuffer
 
 import (
-	"github.com/charmbracelet/lipgloss/v2"
-	"github.com/robinovitch61/bubbleo/viewport/internal"
 	"strings"
 	"testing"
+
+	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/robinovitch61/bubbleo/viewport/internal"
 )
 
 func TestLineBuffer_Width(t *testing.T) {

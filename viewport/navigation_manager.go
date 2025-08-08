@@ -21,6 +21,7 @@ type NavigationManager struct {
 	BottomSticky bool
 }
 
+// NewNavigationManager creates a new NavigationManager with the specified key mappings.
 func NewNavigationManager(keyMap KeyMap) *NavigationManager {
 	return &NavigationManager{
 		KeyMap:           keyMap,
@@ -34,16 +35,27 @@ func NewNavigationManager(keyMap KeyMap) *NavigationManager {
 type NavigationAction int
 
 const (
+	// ActionNone represents no navigation action.
 	ActionNone NavigationAction = iota
+	// ActionUp represents moving up one item.
 	ActionUp
+	// ActionDown represents moving down one item.
 	ActionDown
+	// ActionLeft represents moving left horizontally.
 	ActionLeft
+	// ActionRight represents moving right horizontally.
 	ActionRight
+	// ActionHalfPageUp represents moving up half a page.
 	ActionHalfPageUp
+	// ActionHalfPageDown represents moving down half a page.
 	ActionHalfPageDown
+	// ActionPageUp represents moving up one page.
 	ActionPageUp
+	// ActionPageDown represents moving down one page.
 	ActionPageDown
+	// ActionTop represents moving to the top.
 	ActionTop
+	// ActionBottom represents moving to the bottom.
 	ActionBottom
 )
 

@@ -1,11 +1,12 @@
 package linebuffer
 
 import (
-	"github.com/charmbracelet/lipgloss/v2"
-	"github.com/robinovitch61/bubbleo/viewport/internal"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/robinovitch61/bubbleo/viewport/internal"
 )
 
 func TestLineBuffer_reapplyAnsi(t *testing.T) {
@@ -240,7 +241,7 @@ func TestLineBuffer_reapplyAnsi(t *testing.T) {
 	toUInt32 := func(indexes [][]int) [][]uint32 {
 		uint32Indexes := make([][]uint32, len(indexes))
 		for i, idx := range indexes {
-			uint32Indexes[i] = []uint32{uint32(idx[0]), uint32(idx[1])}
+			uint32Indexes[i] = []uint32{clampIntToUint32(idx[0]), clampIntToUint32(idx[1])}
 		}
 		return uint32Indexes
 	}

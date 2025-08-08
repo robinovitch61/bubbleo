@@ -2,11 +2,12 @@ package linebuffer
 
 import (
 	"fmt"
-	"github.com/charmbracelet/lipgloss/v2"
-	"github.com/mattn/go-runewidth"
 	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/mattn/go-runewidth"
 )
 
 // LineBuffer provides functionality to get sequential strings of a specified terminal cell width, accounting
@@ -30,6 +31,7 @@ var _ LineBufferer = LineBuffer{}
 // type assertion that *LineBuffer implements LineBufferer
 var _ LineBufferer = (*LineBuffer)(nil)
 
+// New creates a new LineBuffer from the given string.
 func New(line string) LineBuffer {
 	if len(line) <= 0 {
 		return LineBuffer{line: line}
@@ -82,7 +84,8 @@ func New(line string) LineBuffer {
 	runeIdx := 0
 	for byteOffset := 0; byteOffset < len(lb.lineNoAnsi); {
 		r, runeNumBytes := utf8.DecodeRuneInString(lb.lineNoAnsi[byteOffset:])
-		width := uint8(runewidth.RuneWidth(r))
+		rw := runewidth.RuneWidth(r)
+		width := clampIntToUint8(rw)
 
 		// pack 4 widths per byte (2 bits each)
 		packedIdx := runeIdx / 4
@@ -99,7 +102,7 @@ func New(line string) LineBuffer {
 		if runeIdx == numRunes-1 {
 			lb.totalWidth = int(cumWidth)
 		}
-		currentOffset += uint32(runeNumBytes)
+		currentOffset += clampIntToUint32(runeNumBytes)
 		runeIdx++
 		byteOffset += runeNumBytes
 	}
@@ -108,6 +111,7 @@ func New(line string) LineBuffer {
 	return lb
 }
 
+// Width returns the total width in terminal cells.
 func (l LineBuffer) Width() int {
 	if len(l.line) == 0 {
 		return 0
@@ -115,14 +119,17 @@ func (l LineBuffer) Width() int {
 	return l.totalWidth
 }
 
+// Content returns the underlying string content.
 func (l LineBuffer) Content() string {
 	return l.line
 }
 
 // Take returns a string of the buffer's width from its current left offset
 func (l LineBuffer) Take(
-	widthToLeft, takeWidth int,
-	continuation, toHighlight string,
+	widthToLeft,
+	takeWidth int,
+	continuation,
+	toHighlight string,
 	highlightStyle lipgloss.Style,
 ) (string, int) {
 	if widthToLeft < 0 {
@@ -218,6 +225,7 @@ func (l LineBuffer) Take(
 	return res, takeWidth - remainingWidth
 }
 
+// WrappedLines returns the content broken into lines that fit within the specified width.
 func (l LineBuffer) WrappedLines(
 	width int,
 	maxLinesEachEnd int,
@@ -245,14 +253,17 @@ func (l LineBuffer) WrappedLines(
 	)
 }
 
+// Matches returns true if the content contains the specified string.
 func (l LineBuffer) Matches(s string) bool {
 	return strings.Contains(l.lineNoAnsi, s)
 }
 
+// MatchesRegex returns true if the content matches the specified regular expression.
 func (l LineBuffer) MatchesRegex(r regexp.Regexp) bool {
 	return r.MatchString(l.lineNoAnsi)
 }
 
+// Repr returns a string representation for debugging.
 func (l LineBuffer) Repr() string {
 	return fmt.Sprintf("LB(%q)", l.line)
 }
@@ -266,7 +277,7 @@ func (l LineBuffer) runeAt(runeIdx int) rune {
 	start := l.getByteOffsetAtRuneIdx(runeIdx)
 	var end uint32
 	if runeIdx+1 >= l.numNoAnsiRunes {
-		end = uint32(len(l.lineNoAnsi))
+		end = clampIntToUint32(len(l.lineNoAnsi))
 	} else {
 		end = l.getByteOffsetAtRuneIdx(runeIdx + 1)
 	}
@@ -297,7 +308,7 @@ func (l LineBuffer) getByteOffsetAtRuneIdx(runeIdx int) uint32 {
 	byteOffset := l.sparseRuneIdxToNoAnsiByteOffset[sparseIdx]
 	for ; currRuneIdx != runeIdx; currRuneIdx++ {
 		_, nBytes := utf8.DecodeRuneInString(l.lineNoAnsi[byteOffset:])
-		byteOffset += uint32(nBytes)
+		byteOffset += clampIntToUint32(nBytes)
 	}
 	return byteOffset
 }
@@ -351,13 +362,14 @@ func (l LineBuffer) findRuneIndexWithWidthToLeft(widthToLeft int) int {
 	}
 
 	left, right := 0, l.numNoAnsiRunes-1
-	if l.getCumulativeWidthAtRuneIdx(right) < uint32(widthToLeft) {
+	widthToLeftUint32 := clampIntToUint32(widthToLeft)
+	if l.getCumulativeWidthAtRuneIdx(right) < widthToLeftUint32 {
 		return l.numNoAnsiRunes
 	}
 
 	for left < right {
 		mid := left + (right-left)/2
-		if l.getCumulativeWidthAtRuneIdx(mid) >= uint32(widthToLeft) {
+		if l.getCumulativeWidthAtRuneIdx(mid) >= widthToLeftUint32 {
 			right = mid
 		} else {
 			left = mid + 1
@@ -369,7 +381,7 @@ func (l LineBuffer) findRuneIndexWithWidthToLeft(widthToLeft int) int {
 	nextLeft := left + 1
 	for nextLeft < l.numNoAnsiRunes && l.getCumulativeWidthAtRuneIdx(nextLeft) == w {
 		left = nextLeft
-		nextLeft += 1
+		nextLeft++
 	}
 
 	return left + 1

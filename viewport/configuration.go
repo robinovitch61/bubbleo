@@ -12,6 +12,7 @@ type Configuration struct {
 	ContinuationIndicator string
 }
 
+// NewConfiguration creates a new Configuration with default settings.
 func NewConfiguration() *Configuration {
 	return &Configuration{
 		WrapText:              false,

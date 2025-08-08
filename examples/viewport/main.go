@@ -5,11 +5,12 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/v2/key"
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/robinovitch61/bubbleo/viewport/linebuffer"
-	"os"
-	"strings"
 
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/robinovitch61/bubbleo/viewport"

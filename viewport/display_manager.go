@@ -24,6 +24,7 @@ type DisplayManager struct {
 	Styles Styles
 }
 
+// NewDisplayManager creates a new DisplayManager with the specified dimensions and styles.
 func NewDisplayManager(width, height int, styles Styles) *DisplayManager {
 	return &DisplayManager{
 		Bounds: internal.Rectangle{
@@ -43,6 +44,7 @@ func (dm *DisplayManager) SetBounds(width, height int) {
 	dm.Bounds.Height = max(0, height)
 }
 
+// GetHighlightStyle returns the appropriate highlight style based on selection state.
 func (dm *DisplayManager) GetHighlightStyle(isSelected bool) lipgloss.Style {
 	if isSelected {
 		return dm.Styles.HighlightStyleIfSelected
@@ -50,14 +52,16 @@ func (dm *DisplayManager) GetHighlightStyle(isSelected bool) lipgloss.Style {
 	return dm.Styles.HighlightStyle
 }
 
+// SafelySetTopItemIdxAndOffset safely sets the top item index and offset within bounds.
 func (dm *DisplayManager) SafelySetTopItemIdxAndOffset(topItemIdx, topItemLineOffset, maxTopItemIdx, maxTopItemLineOffset int) {
-	dm.TopItemIdx = clampValMinMax(topItemIdx, 0, maxTopItemIdx)
+	dm.TopItemIdx = clampValZeroToMax(topItemIdx, maxTopItemIdx)
 	dm.TopItemLineOffset = topItemLineOffset
 	if dm.TopItemIdx == maxTopItemIdx {
-		dm.TopItemLineOffset = clampValMinMax(topItemLineOffset, 0, maxTopItemLineOffset)
+		dm.TopItemLineOffset = clampValZeroToMax(topItemLineOffset, maxTopItemLineOffset)
 	}
 }
 
+// GetNumContentLines returns the number of lines available for content display.
 func (dm *DisplayManager) GetNumContentLines(headerLines int, showFooter bool) int {
 	contentHeight := dm.Bounds.Height - headerLines
 	if showFooter {
@@ -66,6 +70,7 @@ func (dm *DisplayManager) GetNumContentLines(headerLines int, showFooter bool) i
 	return max(0, contentHeight)
 }
 
+// RenderFinalView applies final styling to the rendered content.
 func (dm *DisplayManager) RenderFinalView(content string) string {
 	return lipgloss.NewStyle().Width(dm.Bounds.Width).Height(dm.Bounds.Height).Render(content)
 }
