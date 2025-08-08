@@ -1,9 +1,10 @@
 package viewport
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/robinovitch61/bubbleo/viewport/linebuffer"
-	"strings"
 )
 
 // RenderableString is a convenience type
@@ -11,6 +12,7 @@ type RenderableString struct {
 	LineBuffer linebuffer.LineBufferer
 }
 
+// Render returns the underlying LineBufferer for rendering.
 func (r RenderableString) Render() linebuffer.LineBufferer {
 	return r.LineBuffer
 }
@@ -26,13 +28,7 @@ func RenderableStringCompareFn(a, b RenderableString) bool {
 // assert RenderableString implements viewport.Renderable
 var _ Renderable = RenderableString{}
 
-// pad is a test helper function that pads the given lines to the given width and height.
-// for example, pad(5, 4, []string{"a", "b", "c"}) will be padded to:
-// "a    "
-// "b    "
-// "c    "
-// "     "
-// as a single string
+// Test utility functions
 func pad(width, height int, lines []string) string {
 	var res []string
 	for _, line := range lines {
