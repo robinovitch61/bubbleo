@@ -1,15 +1,17 @@
 package linebuffer
 
 import (
-	"github.com/charmbracelet/lipgloss/v2"
-	"github.com/mattn/go-runewidth"
 	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/mattn/go-runewidth"
 )
 
 var emptySequenceRegex = regexp.MustCompile("\x1b\\[[0-9;]+m\x1b\\[m")
 
+// Test helper colors and styles
 var (
 	red     = lipgloss.Color("#FF0000")
 	blue    = lipgloss.Color("#0000FF")
@@ -373,7 +375,7 @@ func replaceStartWithContinuation(s string, continuationRunes []rune) string {
 			for nextIdx < len(runes) {
 				nextRWidth := runewidth.RuneWidth(runes[nextIdx])
 				if nextRWidth == 0 && nextIdx < len(runes) && !runesHaveAnsiPrefix(runes[nextIdx:]) {
-					runeIdx += 1
+					runeIdx++
 					nextIdx = runeIdx + 1
 				} else {
 					break
@@ -382,7 +384,7 @@ func replaceStartWithContinuation(s string, continuationRunes []rune) string {
 		} else {
 			sb.WriteRune(runes[runeIdx])
 		}
-		runeIdx += 1
+		runeIdx++
 	}
 
 	return sb.String()
@@ -434,7 +436,7 @@ func replaceEndWithContinuation(s string, continuationRunes []rune) string {
 		} else {
 			result = string(runes[runeIdx]) + result
 		}
-		runeIdx -= 1
+		runeIdx--
 	}
 
 	return result
@@ -470,8 +472,8 @@ func findAnsiByteRanges(s string) [][]uint32 {
 			}
 
 			if i < len(s) && s[i] == 'm' {
-				allRanges[rangeIdx*2] = uint32(start)
-				allRanges[rangeIdx*2+1] = uint32(i + 1)
+				allRanges[rangeIdx*2] = clampIntToUint32(start)
+				allRanges[rangeIdx*2+1] = clampIntToUint32(i + 1)
 				rangeIdx++
 				i++
 				continue
@@ -509,8 +511,8 @@ func findAnsiRuneRanges(s string) [][]uint32 {
 			}
 
 			if i < len(runes) && runes[i] == 'm' {
-				allRanges[rangeIdx*2] = uint32(start)
-				allRanges[rangeIdx*2+1] = uint32(i + 1)
+				allRanges[rangeIdx*2] = clampIntToUint32(start)
+				allRanges[rangeIdx*2+1] = clampIntToUint32(i + 1)
 				rangeIdx++
 				i++
 				continue
@@ -537,7 +539,7 @@ func getBytesLeftOfWidth(nBytes int, buffers []LineBuffer, startBufferIdx int, w
 	if runeIdx > 0 {
 		var startByteOffset uint32
 		if runeIdx >= currentBuffer.numNoAnsiRunes {
-			startByteOffset = uint32(len(currentBuffer.lineNoAnsi))
+			startByteOffset = clampIntToUint32(len(currentBuffer.lineNoAnsi))
 		} else {
 			startByteOffset = currentBuffer.getByteOffsetAtRuneIdx(runeIdx)
 		}

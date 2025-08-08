@@ -2,11 +2,12 @@ package internal
 
 import (
 	"fmt"
-	"github.com/google/go-cmp/cmp"
 	"runtime"
 	"sort"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // CmpStr compares two strings and fails the test if they are not equal

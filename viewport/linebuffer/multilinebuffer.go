@@ -1,9 +1,10 @@
 package linebuffer
 
 import (
-	"github.com/charmbracelet/lipgloss/v2"
 	"regexp"
 	"strings"
+
+	"github.com/charmbracelet/lipgloss/v2"
 )
 
 // MultiLineBuffer implements LineBufferer by wrapping multiple LineBuffers without extra memory allocation
@@ -18,6 +19,7 @@ var _ LineBufferer = MultiLineBuffer{}
 // type assertion that *MultiLineBuffer implements LineBufferer
 var _ LineBufferer = (*MultiLineBuffer)(nil)
 
+// NewMulti creates a new MultiLineBuffer from the given LineBuffers.
 func NewMulti(buffers ...LineBuffer) MultiLineBuffer {
 	if len(buffers) == 0 {
 		return MultiLineBuffer{}
@@ -34,10 +36,12 @@ func NewMulti(buffers ...LineBuffer) MultiLineBuffer {
 	}
 }
 
+// Width returns the total width across all buffers.
 func (m MultiLineBuffer) Width() int {
 	return m.totalWidth
 }
 
+// Content returns the concatenated content of all buffers.
 func (m MultiLineBuffer) Content() string {
 	if len(m.buffers) == 0 {
 		return ""
@@ -62,6 +66,7 @@ func (m MultiLineBuffer) Content() string {
 	return builder.String()
 }
 
+// Take extracts a portion of the content from the specified position and width.
 func (m MultiLineBuffer) Take(
 	widthToLeft, takeWidth int,
 	continuation, toHighlight string,
@@ -116,7 +121,7 @@ func (m MultiLineBuffer) Take(
 	}
 
 	// get content after our result for highlight context
-	currentBufferIdx -= 1
+	currentBufferIdx--
 	nBytesRightContext := len(toHighlight) * 2
 	rightContext := getBytesRightOfWidth(nBytesRightContext, m.buffers, currentBufferIdx, remainingBufferWidth)
 
@@ -151,6 +156,7 @@ func (m MultiLineBuffer) Take(
 	return res, takeWidth - remainingTotalWidth
 }
 
+// WrappedLines returns the content broken into lines that fit within the specified width.
 func (m MultiLineBuffer) WrappedLines(
 	width int,
 	maxLinesEachEnd int,
@@ -182,14 +188,17 @@ func (m MultiLineBuffer) WrappedLines(
 	)
 }
 
+// Matches returns true if the content contains the specified string.
 func (m MultiLineBuffer) Matches(s string) bool {
 	return strings.Contains(m.concatenatedLineNoAnsi(), s)
 }
 
+// MatchesRegex returns true if the content matches the specified regular expression.
 func (m MultiLineBuffer) MatchesRegex(r regexp.Regexp) bool {
 	return r.MatchString(m.concatenatedLineNoAnsi())
 }
 
+// Repr returns a string representation of the MultiLineBuffer for debugging.
 func (m MultiLineBuffer) Repr() string {
 	v := "Multi("
 	for i := range m.buffers {

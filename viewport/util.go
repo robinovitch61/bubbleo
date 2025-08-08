@@ -1,5 +1,5 @@
 package viewport
 
-func clampValMinMax(v, minimum, maximum int) int {
-	return max(minimum, min(maximum, v))
+func clampValZeroToMax(v, maximum int) int {
+	return max(0, min(maximum, v))
 }
