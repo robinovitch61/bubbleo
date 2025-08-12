@@ -206,7 +206,7 @@ func highlightString(
 		for _, match := range matches {
 			startIdx := match[0] + segmentStart
 			endIdx := match[1] + segmentStart
-			styledSegment = highlightLine(styledSegment, plainLine[startIdx:endIdx], highlightStyle, startIdx, endIdx)
+			styledSegment = highlightLine(styledSegment, plainLine[startIdx:endIdx], highlightStyle, 0, len(styledSegment))
 		}
 		return styledSegment
 	}
