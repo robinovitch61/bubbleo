@@ -16,8 +16,8 @@ type LineBufferer interface {
 	Take(
 		widthToLeft,
 		takeWidth int,
-		continuation,
-		toHighlight string,
+		continuation string,
+		toHighlight HighlightData,
 		highlightStyle lipgloss.Style,
 	) (string, int)
 	// WrappedLines returns the content as a slice of strings, wrapping at width
@@ -26,7 +26,7 @@ type LineBufferer interface {
 	WrappedLines(
 		width int,
 		maxLinesEachEnd int,
-		toHighlight string,
+		toHighlight HighlightData,
 		toHighlightStyle lipgloss.Style,
 	) []string
 	// Matches returns true if the content contains the given string, ignoring ansi styling

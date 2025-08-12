@@ -1,6 +1,7 @@
 package viewport
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -817,6 +818,33 @@ func TestViewport_SelectionOff_WrapOff_StringToHighlight(t *testing.T) {
 	internal.CmpStr(t, expectedView, vp.View())
 }
 
+func TestViewport_SelectionOff_WrapOff_RegexToHighlight(t *testing.T) {
+	w, h := 10, 5
+	vp := newViewport(w, h)
+	vp.SetHeader([]string{"header"})
+	vp.SetRegexToHighlight(regexp.MustCompile("s.*n"))
+	vp.SetStyles(Styles{
+		FooterStyle:              lipgloss.NewStyle(),
+		HighlightStyle:           lipgloss.NewStyle().Foreground(red),
+		HighlightStyleIfSelected: lipgloss.NewStyle(),
+		SelectedItemStyle:        selectionStyle,
+	})
+	setContent(&vp, []string{
+		"first",
+		"second",
+		"second",
+		"third",
+	})
+	expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"header",
+		"first",
+		"\x1b[38;2;255;0;0msecon\x1b[md",
+		"\x1b[38;2;255;0;0msecon\x1b[md",
+		"75% (3/4)",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+}
+
 func TestViewport_SelectionOff_WrapOff_StringToHighlightManyMatches(t *testing.T) {
 	runTest := func(t *testing.T) {
 		w, h := 10, 5
@@ -826,6 +854,30 @@ func TestViewport_SelectionOff_WrapOff_StringToHighlightManyMatches(t *testing.T
 			strings.Repeat("r", 100000),
 		})
 		vp.SetStringToHighlight("r")
+		vp.SetStyles(Styles{
+			FooterStyle:              lipgloss.NewStyle(),
+			HighlightStyle:           lipgloss.NewStyle().Foreground(green),
+			HighlightStyleIfSelected: lipgloss.NewStyle().Foreground(red),
+			SelectedItemStyle:        selectionStyle,
+		})
+		expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+			"header",
+			strings.Repeat("\x1b[38;2;0;255;0mr\x1b[m", 7) + strings.Repeat(".", 3),
+		})
+		internal.CmpStr(t, expectedView, vp.View())
+	}
+	internal.RunWithTimeout(t, runTest, 20*time.Millisecond)
+}
+
+func TestViewport_SelectionOff_WrapOff_RegexToHighlightManyMatches(t *testing.T) {
+	runTest := func(t *testing.T) {
+		w, h := 10, 5
+		vp := newViewport(w, h)
+		vp.SetHeader([]string{"header"})
+		setContent(&vp, []string{
+			strings.Repeat("r", 100000),
+		})
+		vp.SetRegexToHighlight(regexp.MustCompile("r"))
 		vp.SetStyles(Styles{
 			FooterStyle:              lipgloss.NewStyle(),
 			HighlightStyle:           lipgloss.NewStyle().Foreground(green),
@@ -863,6 +915,35 @@ func TestViewport_SelectionOff_WrapOff_StringToHighlightAnsi(t *testing.T) {
 
 	// should not highlight the ansi escape codes themselves
 	vp.SetStringToHighlight("38")
+	expectedView = pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"header",
+		"line \x1b[38;2;255;0;0mred\x1b[m e again",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+}
+
+func TestViewport_SelectionOff_WrapOff_RegexToHighlightAnsi(t *testing.T) {
+	w, h := 20, 5
+	vp := newViewport(w, h)
+	vp.SetHeader([]string{"header"})
+	setContent(&vp, []string{
+		"line \x1b[38;2;255;0;0mred\x1b[m e again",
+	})
+	vp.SetRegexToHighlight(regexp.MustCompile("r+e"))
+	vp.SetStyles(Styles{
+		FooterStyle:              lipgloss.NewStyle(),
+		HighlightStyle:           selectionStyle,
+		HighlightStyleIfSelected: lipgloss.NewStyle(),
+		SelectedItemStyle:        selectionStyle,
+	})
+	expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"header",
+		"line \x1b[38;2;0;0;255mre\x1b[m\x1b[38;2;255;0;0md\x1b[m e again",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+
+	// should not highlight the ansi escape codes themselves
+	vp.SetRegexToHighlight(regexp.MustCompile("38"))
 	expectedView = pad(vp.GetWidth(), vp.GetHeight(), []string{
 		"header",
 		"line \x1b[38;2;255;0;0mred\x1b[m e again",
@@ -2231,6 +2312,59 @@ func TestViewport_SelectionOn_WrapOff_StringToHighlight(t *testing.T) {
 	internal.CmpStr(t, expectedView, vp.View())
 }
 
+func TestViewport_SelectionOn_WrapOff_RegexToHighlight(t *testing.T) {
+	w, h := 15, 5
+	vp := newViewport(w, h)
+	vp.SetHeader([]string{"header"})
+	vp.SetSelectionEnabled(true)
+	vp.SetRegexToHighlight(regexp.MustCompile("s+.*nd"))
+	vp.SetStyles(Styles{
+		FooterStyle:              lipgloss.NewStyle(),
+		HighlightStyle:           lipgloss.NewStyle().Foreground(green),
+		HighlightStyleIfSelected: lipgloss.NewStyle().Foreground(red),
+		SelectedItemStyle:        selectionStyle,
+	})
+	setContent(&vp, []string{
+		"the first line",
+		"the second line",
+		"the second line",
+		"the fourth line",
+	})
+	expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"header",
+		"\x1b[38;2;0;0;255mthe first line\x1b[m",
+		"the \x1b[38;2;0;255;0msecond\x1b[m line",
+		"the \x1b[38;2;0;255;0msecond\x1b[m line",
+		"25% (1/4)",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+
+	vp.SetRegexToHighlight(regexp.MustCompile("fir.t"))
+	expectedView = pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"header",
+		"\x1b[38;2;0;0;255mthe \x1b[m\x1b[38;2;255;0;0mfirst\x1b[m\x1b[38;2;0;0;255m line\x1b[m",
+		"the second line",
+		"the second line",
+		"25% (1/4)",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+
+	setContent(&vp, []string{
+		"first line",
+		"second line",
+		"second line",
+		"fourth line",
+	})
+	expectedView = pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"header",
+		"\x1b[38;2;255;0;0mfirst\x1b[m\x1b[38;2;0;0;255m line\x1b[m",
+		"second line",
+		"second line",
+		"25% (1/4)",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+}
+
 func TestViewport_SelectionOn_WrapOff_StringToHighlightManyMatches(t *testing.T) {
 	runTest := func(t *testing.T) {
 		w, h := 10, 5
@@ -2241,6 +2375,31 @@ func TestViewport_SelectionOn_WrapOff_StringToHighlightManyMatches(t *testing.T)
 			strings.Repeat("r", 100000),
 		})
 		vp.SetStringToHighlight("r")
+		vp.SetStyles(Styles{
+			FooterStyle:              lipgloss.NewStyle(),
+			HighlightStyle:           lipgloss.NewStyle().Foreground(green),
+			HighlightStyleIfSelected: lipgloss.NewStyle().Foreground(red),
+			SelectedItemStyle:        selectionStyle,
+		})
+		expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+			"header",
+			strings.Repeat("\x1b[38;2;255;0;0mr\x1b[m", 7) + "\x1b[38;2;0;0;255m" + strings.Repeat(".", 3) + "\x1b[m",
+		})
+		internal.CmpStr(t, expectedView, vp.View())
+	}
+	internal.RunWithTimeout(t, runTest, 10*time.Millisecond)
+}
+
+func TestViewport_SelectionOn_WrapOff_RegexToHighlightManyMatches(t *testing.T) {
+	runTest := func(t *testing.T) {
+		w, h := 10, 5
+		vp := newViewport(w, h)
+		vp.SetHeader([]string{"header"})
+		vp.SetSelectionEnabled(true)
+		setContent(&vp, []string{
+			strings.Repeat("r", 100000),
+		})
+		vp.SetRegexToHighlight(regexp.MustCompile("r"))
 		vp.SetStyles(Styles{
 			FooterStyle:              lipgloss.NewStyle(),
 			HighlightStyle:           lipgloss.NewStyle().Foreground(green),
@@ -3097,6 +3256,34 @@ func TestViewport_SelectionOff_WrapOn_StringToHighlight(t *testing.T) {
 	internal.CmpStr(t, expectedView, vp.View())
 }
 
+func TestViewport_SelectionOff_WrapOn_RegexToHighlight(t *testing.T) {
+	w, h := 10, 5
+	vp := newViewport(w, h)
+	vp.SetHeader([]string{"header"})
+	vp.SetWrapText(true)
+	vp.SetRegexToHighlight(regexp.MustCompile("s...nd"))
+	vp.SetStyles(Styles{
+		FooterStyle:              lipgloss.NewStyle(),
+		HighlightStyle:           lipgloss.NewStyle().Foreground(red),
+		HighlightStyleIfSelected: lipgloss.NewStyle(),
+		SelectedItemStyle:        selectionStyle,
+	})
+	setContent(&vp, []string{
+		"first",
+		"second",
+		"second",
+		"third",
+	})
+	expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"header",
+		"first",
+		"\x1b[38;2;255;0;0msecond\x1b[m",
+		"\x1b[38;2;255;0;0msecond\x1b[m",
+		"75% (3/4)",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+}
+
 func TestViewport_SelectionOff_WrapOn_StringToHighlightManyMatches(t *testing.T) {
 	runTest := func(t *testing.T) {
 		w, h := 10, 5
@@ -3118,6 +3305,73 @@ func TestViewport_SelectionOff_WrapOn_StringToHighlightManyMatches(t *testing.T)
 			strings.Repeat("\x1b[38;2;0;255;0mr\x1b[m", 10),
 			strings.Repeat("\x1b[38;2;0;255;0mr\x1b[m", 10),
 			strings.Repeat("\x1b[38;2;0;255;0mr\x1b[m", 10),
+			"99% (1/1)",
+		})
+		internal.CmpStr(t, expectedView, vp.View())
+	}
+	internal.RunWithTimeout(t, runTest, 10*time.Millisecond)
+}
+
+func TestViewport_SelectionOff_WrapOn_RegexToHighlightManyMatches(t *testing.T) {
+	runTest := func(t *testing.T) {
+		w, h := 10, 5
+		vp := newViewport(w, h)
+		vp.SetHeader([]string{"header"})
+		vp.SetWrapText(true)
+		setContent(&vp, []string{
+			strings.Repeat("r", 100000),
+		})
+		vp.SetRegexToHighlight(regexp.MustCompile("r"))
+		vp.SetStyles(Styles{
+			FooterStyle:              lipgloss.NewStyle(),
+			HighlightStyle:           lipgloss.NewStyle().Foreground(green),
+			HighlightStyleIfSelected: lipgloss.NewStyle().Foreground(red),
+			SelectedItemStyle:        selectionStyle,
+		})
+		expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+			"header",
+			strings.Repeat("\x1b[38;2;0;255;0mr\x1b[m", 10),
+			strings.Repeat("\x1b[38;2;0;255;0mr\x1b[m", 10),
+			strings.Repeat("\x1b[38;2;0;255;0mr\x1b[m", 10),
+			"99% (1/1)",
+		})
+		internal.CmpStr(t, expectedView, vp.View())
+	}
+	internal.RunWithTimeout(t, runTest, 10*time.Millisecond)
+}
+
+func TestViewport_SelectionOff_WrapOn_RegexToHighlightMissesWrap(t *testing.T) {
+	runTest := func(t *testing.T) {
+		w, h := 10, 5
+		vp := newViewport(w, h)
+		vp.SetHeader([]string{"header"})
+		vp.SetWrapText(true)
+		setContent(&vp, []string{
+			"this is too long and triggers wrapping",
+		})
+		vp.SetRegexToHighlight(regexp.MustCompile("this.*too"))
+		vp.SetStyles(Styles{
+			FooterStyle:              lipgloss.NewStyle(),
+			HighlightStyle:           lipgloss.NewStyle().Foreground(green),
+			HighlightStyleIfSelected: lipgloss.NewStyle().Foreground(red),
+			SelectedItemStyle:        selectionStyle,
+		})
+		// regex matches aren't shown for wrapped lines for performance reasons (lines could be extremely long)
+		expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+			"header",
+			"this is to",
+			"o long and",
+			" triggers ",
+			"99% (1/1)",
+		})
+		internal.CmpStr(t, expectedView, vp.View())
+
+		vp.SetRegexToHighlight(regexp.MustCompile("this.*to"))
+		expectedView = pad(vp.GetWidth(), vp.GetHeight(), []string{
+			"header",
+			"\x1b[38;2;0;255;0mthis is to\x1b[m",
+			"o long and",
+			" triggers ",
 			"99% (1/1)",
 		})
 		internal.CmpStr(t, expectedView, vp.View())
@@ -3149,6 +3403,38 @@ func TestViewport_SelectionOff_WrapOn_StringToHighlightAnsi(t *testing.T) {
 
 	// should not highlight the ansi escape codes themselves
 	vp.SetStringToHighlight("38")
+	expectedView = pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"header",
+		"line \x1b[38;2;255;0;0mred\x1b[m e",
+		" again",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+}
+
+func TestViewport_SelectionOff_WrapOn_RegexToHighlightAnsi(t *testing.T) {
+	w, h := 10, 5
+	vp := newViewport(w, h)
+	vp.SetHeader([]string{"header"})
+	vp.SetWrapText(true)
+	setContent(&vp, []string{
+		"line \x1b[38;2;255;0;0mred\x1b[m e again",
+	})
+	vp.SetRegexToHighlight(regexp.MustCompile("e"))
+	vp.SetStyles(Styles{
+		FooterStyle:              lipgloss.NewStyle(),
+		HighlightStyle:           selectionStyle,
+		HighlightStyleIfSelected: lipgloss.NewStyle(),
+		SelectedItemStyle:        selectionStyle,
+	})
+	expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"header",
+		"lin\x1b[38;2;0;0;255me\x1b[m \x1b[38;2;255;0;0mr\x1b[m\x1b[38;2;0;0;255me\x1b[m\x1b[38;2;255;0;0md\x1b[m \x1b[38;2;0;0;255me\x1b[m",
+		" again",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+
+	// should not highlight the ansi escape codes themselves
+	vp.SetRegexToHighlight(regexp.MustCompile("38"))
 	expectedView = pad(vp.GetWidth(), vp.GetHeight(), []string{
 		"header",
 		"line \x1b[38;2;255;0;0mred\x1b[m e",
@@ -4666,6 +4952,45 @@ func TestViewport_SelectionOn_WrapOn_StringToHighlight(t *testing.T) {
 	internal.CmpStr(t, expectedView, vp.View())
 }
 
+func TestViewport_SelectionOn_WrapOn_RegexToHighlight(t *testing.T) {
+	w, h := 10, 5
+	vp := newViewport(w, h)
+	vp.SetHeader([]string{"header"})
+	vp.SetSelectionEnabled(true)
+	vp.SetWrapText(true)
+	vp.SetRegexToHighlight(regexp.MustCompile("seco?nd"))
+	vp.SetStyles(Styles{
+		FooterStyle:              lipgloss.NewStyle(),
+		HighlightStyle:           lipgloss.NewStyle().Foreground(green),
+		HighlightStyleIfSelected: lipgloss.NewStyle().Foreground(red),
+		SelectedItemStyle:        selectionStyle,
+	})
+	setContent(&vp, []string{
+		"first",
+		"second",
+		"second",
+		"third",
+	})
+	expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"header",
+		"\x1b[38;2;0;0;255mfirst\x1b[m",
+		"\x1b[38;2;0;255;0msecond\x1b[m",
+		"\x1b[38;2;0;255;0msecond\x1b[m",
+		"25% (1/4)",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+
+	vp.SetRegexToHighlight(regexp.MustCompile("fi?rst"))
+	expectedView = pad(vp.GetWidth(), vp.GetHeight(), []string{
+		"header",
+		"\x1b[38;2;255;0;0mfirst\x1b[m",
+		"second",
+		"second",
+		"25% (1/4)",
+	})
+	internal.CmpStr(t, expectedView, vp.View())
+}
+
 func TestViewport_SelectionOn_WrapOn_StringToHighlightManyMatches(t *testing.T) {
 	runTest := func(t *testing.T) {
 		w, h := 10, 5
@@ -4677,6 +5002,35 @@ func TestViewport_SelectionOn_WrapOn_StringToHighlightManyMatches(t *testing.T) 
 			strings.Repeat("r", 100000),
 		})
 		vp.SetStringToHighlight("r")
+		vp.SetStyles(Styles{
+			FooterStyle:              lipgloss.NewStyle(),
+			HighlightStyle:           lipgloss.NewStyle().Foreground(green),
+			HighlightStyleIfSelected: lipgloss.NewStyle().Foreground(red),
+			SelectedItemStyle:        selectionStyle,
+		})
+		expectedView := pad(vp.GetWidth(), vp.GetHeight(), []string{
+			"header",
+			strings.Repeat("\x1b[38;2;255;0;0mr\x1b[m", 10),
+			strings.Repeat("\x1b[38;2;255;0;0mr\x1b[m", 10),
+			strings.Repeat("\x1b[38;2;255;0;0mr\x1b[m", 10),
+			"100% (1/1)",
+		})
+		internal.CmpStr(t, expectedView, vp.View())
+	}
+	internal.RunWithTimeout(t, runTest, 10*time.Millisecond)
+}
+
+func TestViewport_SelectionOn_WrapOn_RegexToHighlightManyMatches(t *testing.T) {
+	runTest := func(t *testing.T) {
+		w, h := 10, 5
+		vp := newViewport(w, h)
+		vp.SetHeader([]string{"header"})
+		vp.SetSelectionEnabled(true)
+		vp.SetWrapText(true)
+		setContent(&vp, []string{
+			strings.Repeat("r", 100000),
+		})
+		vp.SetRegexToHighlight(regexp.MustCompile("r"))
 		vp.SetStyles(Styles{
 			FooterStyle:              lipgloss.NewStyle(),
 			HighlightStyle:           lipgloss.NewStyle().Foreground(green),

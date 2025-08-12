@@ -128,8 +128,8 @@ func (l LineBuffer) Content() string {
 func (l LineBuffer) Take(
 	widthToLeft,
 	takeWidth int,
-	continuation,
-	toHighlight string,
+	continuation string,
+	toHighlight HighlightData,
 	highlightStyle lipgloss.Style,
 ) (string, int) {
 	if widthToLeft < 0 {
@@ -229,7 +229,7 @@ func (l LineBuffer) Take(
 func (l LineBuffer) WrappedLines(
 	width int,
 	maxLinesEachEnd int,
-	toHighlight string,
+	toHighlight HighlightData,
 	toHighlightStyle lipgloss.Style,
 ) []string {
 	if width == 0 {

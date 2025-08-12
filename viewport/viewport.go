@@ -174,7 +174,7 @@ func (m *Model[T]) View() string {
 
 	for i := range visibleHeaderLines {
 		lineBuffer := linebuffer.New(visibleHeaderLines[i])
-		line, _ := lineBuffer.Take(0, m.display.Bounds.Width, m.config.ContinuationIndicator, "", lipgloss.NewStyle())
+		line, _ := lineBuffer.Take(0, m.display.Bounds.Width, m.config.ContinuationIndicator, linebuffer.HighlightData{}, lipgloss.NewStyle())
 		builder.WriteString(line)
 		builder.WriteByte('\n')
 	}
@@ -190,7 +190,7 @@ func (m *Model[T]) View() string {
 				m.display.XOffset,
 				m.display.Bounds.Width,
 				m.config.ContinuationIndicator,
-				m.content.StringToHighlight,
+				m.content.ToHighlight,
 				m.highlightStyle(visibleContentLines.itemIndexes[i]),
 			)
 		}
@@ -203,7 +203,7 @@ func (m *Model[T]) View() string {
 		if !m.config.WrapText && m.display.XOffset > 0 && lipgloss.Width(truncated) == 0 && visibleContentLines.lines[i].Width() > 0 {
 			// if panned right past where line ends, show continuation indicator
 			lineBuffer := linebuffer.New(m.getLineContinuationIndicator())
-			truncated, _ = lineBuffer.Take(0, m.display.Bounds.Width, "", "", lipgloss.NewStyle())
+			truncated, _ = lineBuffer.Take(0, m.display.Bounds.Width, "", linebuffer.HighlightData{}, lipgloss.NewStyle())
 			if isSelection {
 				truncated = m.styleSelection(truncated)
 			}
@@ -410,9 +410,20 @@ func (m *Model[T]) GetSelectedItem() *T {
 	return m.content.GetSelectedItem()
 }
 
-// SetStringToHighlight sets a string to highlight in the viewport
+// SetStringToHighlight sets a string to highlight in the viewport. Can only set string or regex, not both.
 func (m *Model[T]) SetStringToHighlight(h string) {
-	m.content.StringToHighlight = h
+	m.content.ToHighlight = linebuffer.HighlightData{
+		StringToHighlight: h,
+		IsRegex:           false,
+	}
+}
+
+// SetRegexToHighlight sets a regex to highlight in the viewport. Can only set string or regex, not both.
+func (m *Model[T]) SetRegexToHighlight(r *regexp.Regexp) {
+	m.content.ToHighlight = linebuffer.HighlightData{
+		RegexPatternToHighlight: r,
+		IsRegex:                 true,
+	}
 }
 
 // SetHeader sets the header, an unselectable set of lines at the top of the viewport
@@ -509,7 +520,7 @@ func (m *Model[T]) numLinesForItem(itemIdx int) int {
 	}
 	items := m.content.Items
 	lb := items[itemIdx].Render()
-	return len(lb.WrappedLines(m.display.Bounds.Width, m.display.Bounds.Height, "", lipgloss.NewStyle()))
+	return len(lb.WrappedLines(m.display.Bounds.Width, m.display.Bounds.Height, linebuffer.HighlightData{}, lipgloss.NewStyle()))
 }
 
 func (m *Model[T]) safelySetXOffset(n int) {
@@ -661,7 +672,7 @@ func (m *Model[T]) getVisibleHeaderLines() []string {
 		lb := linebuffer.New(s)
 		wrappedHeaderLines = append(
 			wrappedHeaderLines,
-			lb.WrappedLines(m.display.Bounds.Width, m.display.Bounds.Height, "", lipgloss.NewStyle())...,
+			lb.WrappedLines(m.display.Bounds.Width, m.display.Bounds.Height, linebuffer.HighlightData{}, lipgloss.NewStyle())...,
 		)
 	}
 	return safeSliceUpToIdx(wrappedHeaderLines, m.display.Bounds.Height)
@@ -716,7 +727,7 @@ func (m *Model[T]) getVisibleContentLines() visibleContentLinesResult {
 
 	if m.config.WrapText {
 		lb := currItem.Render()
-		itemLines := lb.WrappedLines(m.display.Bounds.Width, m.display.Bounds.Height, m.content.StringToHighlight, m.highlightStyle(currItemIdx))
+		itemLines := lb.WrappedLines(m.display.Bounds.Width, m.display.Bounds.Height, m.content.ToHighlight, m.highlightStyle(currItemIdx))
 		offsetLines := safeSliceFromIdx(itemLines, m.display.TopItemLineOffset)
 		done = addLines(toLineBuffers(offsetLines), currItemIdx)
 
@@ -727,7 +738,7 @@ func (m *Model[T]) getVisibleContentLines() visibleContentLinesResult {
 			} else {
 				currItem = items[currItemIdx]
 				lb = currItem.Render()
-				itemLines = lb.WrappedLines(m.display.Bounds.Width, m.display.Bounds.Height, m.content.StringToHighlight, m.highlightStyle(currItemIdx))
+				itemLines = lb.WrappedLines(m.display.Bounds.Width, m.display.Bounds.Height, m.content.ToHighlight, m.highlightStyle(currItemIdx))
 				done = addLines(toLineBuffers(itemLines), currItemIdx)
 			}
 		}
@@ -796,7 +807,7 @@ func (m *Model[T]) getTruncatedFooterLine(visibleContentLines visibleContentLine
 	footerString := fmt.Sprintf("%d%% (%d/%d)", percentScrolled, numerator, denominator)
 
 	footerBuffer := linebuffer.New(footerString)
-	f, _ := footerBuffer.Take(0, m.display.Bounds.Width, m.config.ContinuationIndicator, "", lipgloss.NewStyle())
+	f, _ := footerBuffer.Take(0, m.display.Bounds.Width, m.config.ContinuationIndicator, linebuffer.HighlightData{}, lipgloss.NewStyle())
 	return m.display.Styles.FooterStyle.Render(f)
 }
 
