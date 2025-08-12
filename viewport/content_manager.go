@@ -1,5 +1,7 @@
 package viewport
 
+import "github.com/robinovitch61/bubbleo/viewport/linebuffer"
+
 // ContentManager manages the actual content and selection state
 type ContentManager[T Renderable] struct {
 	// Items is the complete list of items to be rendered in the viewport
@@ -12,9 +14,8 @@ type ContentManager[T Renderable] struct {
 	// selectedIdx is the index of Items of the current selection (only relevant when selection is enabled)
 	selectedIdx int
 
-	// StringToHighlight is a string to highlight in the viewport wherever it shows up, even wrapped between lines
-	// within the same item
-	StringToHighlight string
+	// ToHighlight is what to highlight wherever it shows up within an item, even wrapped between lines
+	ToHighlight linebuffer.HighlightData
 
 	// CompareFn is an optional function to compare items for maintaining the selection when content changes
 	// if set, the viewport will try to maintain the previous selected item when content changes

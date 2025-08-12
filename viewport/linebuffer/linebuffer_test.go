@@ -874,8 +874,12 @@ func TestLineBuffer_Take(t *testing.T) {
 			}
 			lb := New(tt.s)
 			startWidth := tt.startWidth
+			toHighlight := HighlightData{
+				StringToHighlight: tt.toHighlight,
+				IsRegex:           false,
+			}
 			for i := 0; i < tt.numTakes; i++ {
-				actual, actualWidth := lb.Take(startWidth, tt.width, tt.continuation, tt.toHighlight, tt.highlightStyle)
+				actual, actualWidth := lb.Take(startWidth, tt.width, tt.continuation, toHighlight, tt.highlightStyle)
 				internal.CmpStr(t, tt.expected[i], actual)
 				startWidth += actualWidth
 			}
@@ -1052,7 +1056,11 @@ func TestLineBuffer_WrappedLines(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			lb := New(tt.s)
-			got := lb.WrappedLines(tt.width, tt.maxLinesEachEnd, tt.toHighlight, tt.highlightStyle)
+			toHighlight := HighlightData{
+				StringToHighlight: tt.toHighlight,
+				IsRegex:           false,
+			}
+			got := lb.WrappedLines(tt.width, tt.maxLinesEachEnd, toHighlight, tt.highlightStyle)
 			if len(got) != len(tt.want) {
 				t.Errorf("wrap() len = %d, want %d", len(got), len(tt.want))
 			}

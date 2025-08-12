@@ -189,20 +189,36 @@ func highlightLine(line, highlight string, highlightStyle lipgloss.Style, start,
 // Returns the segment with highlighting applied, preserving original ANSI codes.
 func highlightString(
 	styledSegment string,
-	toHighlight string,
+	toHighlight HighlightData,
 	highlightStyle lipgloss.Style,
 	plainLine string,
 	segmentStart int,
 	segmentEnd int,
 ) string {
-	if toHighlight != "" && len(highlightStyle.String()) > 0 {
-		styledSegment = highlightLine(styledSegment, toHighlight, highlightStyle, 0, len(styledSegment))
+	// regex case, highlight matches in the specific segment, without consideration for overflow
+	if toHighlight.IsRegex {
+		matches := toHighlight.RegexPatternToHighlight.FindAllStringIndex(plainLine[segmentStart:segmentEnd], -1)
+		if matches == nil {
+			return styledSegment // no matches, return as is
+		}
 
-		if left, endIdx := overflowsLeft(plainLine, segmentStart, toHighlight); left {
+		// TODO LEO: test this
+		for _, match := range matches {
+			startIdx := match[0] + segmentStart
+			endIdx := match[1] + segmentStart
+			styledSegment = highlightLine(styledSegment, plainLine[startIdx:endIdx], highlightStyle, startIdx, endIdx)
+		}
+		return styledSegment
+	}
+	// non-regex highlighting
+	if toHighlight.StringToHighlight != "" && len(highlightStyle.String()) > 0 {
+		styledSegment = highlightLine(styledSegment, toHighlight.StringToHighlight, highlightStyle, 0, len(styledSegment))
+
+		if left, endIdx := overflowsLeft(plainLine, segmentStart, toHighlight.StringToHighlight); left {
 			highlightLeft := plainLine[segmentStart:endIdx]
 			styledSegment = highlightLine(styledSegment, highlightLeft, highlightStyle, 0, len(highlightLeft))
 		}
-		if right, startIdx := overflowsRight(plainLine, segmentEnd, toHighlight); right {
+		if right, startIdx := overflowsRight(plainLine, segmentEnd, toHighlight.StringToHighlight); right {
 			highlightRight := plainLine[startIdx:segmentEnd]
 			lenPlainTextRes := len(stripAnsi(styledSegment))
 			styledSegment = highlightLine(styledSegment, highlightRight, highlightStyle, lenPlainTextRes-len(highlightRight), lenPlainTextRes)
@@ -615,7 +631,7 @@ func getWrappedLines(
 	totalLines int,
 	width int,
 	maxLinesEachEnd int,
-	toHighlight string,
+	toHighlight HighlightData,
 	toHighlightStyle lipgloss.Style,
 ) []string {
 	if width <= 0 {

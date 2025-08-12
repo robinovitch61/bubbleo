@@ -68,8 +68,10 @@ func (m MultiLineBuffer) Content() string {
 
 // Take extracts a portion of the content from the specified position and width.
 func (m MultiLineBuffer) Take(
-	widthToLeft, takeWidth int,
-	continuation, toHighlight string,
+	widthToLeft,
+	takeWidth int,
+	continuation string,
+	toHighlight HighlightData,
 	highlightStyle lipgloss.Style,
 ) (string, int) {
 	if len(m.buffers) == 0 {
@@ -99,18 +101,18 @@ func (m MultiLineBuffer) Take(
 	}
 
 	// get content before our start position for highlight context
-	nBytesLeftContext := len(toHighlight) * 2
+	nBytesLeftContext := len(toHighlight.StringToHighlight) * 2
 	leftContext := getBytesLeftOfWidth(nBytesLeftContext, m.buffers, firstBufferIdx, startWidthFirstBuffer)
 
 	// take from first buffer
-	res, takenWidth := m.buffers[firstBufferIdx].Take(startWidthFirstBuffer, takeWidth, "", "", lipgloss.NewStyle())
+	res, takenWidth := m.buffers[firstBufferIdx].Take(startWidthFirstBuffer, takeWidth, "", HighlightData{}, lipgloss.NewStyle())
 	remainingTotalWidth := takeWidth - takenWidth
 	remainingBufferWidth := m.buffers[firstBufferIdx].Width() - takenWidth
 
 	// if we have more width to take and more buffers available, continue
 	currentBufferIdx := firstBufferIdx + 1
 	for remainingTotalWidth > 0 && currentBufferIdx < len(m.buffers) {
-		nextPart, partWidth := m.buffers[currentBufferIdx].Take(0, remainingTotalWidth, "", "", lipgloss.NewStyle())
+		nextPart, partWidth := m.buffers[currentBufferIdx].Take(0, remainingTotalWidth, "", HighlightData{}, lipgloss.NewStyle())
 		remainingBufferWidth = m.buffers[currentBufferIdx].Width() - partWidth
 		if partWidth == 0 {
 			break
@@ -122,7 +124,7 @@ func (m MultiLineBuffer) Take(
 
 	// get content after our result for highlight context
 	currentBufferIdx--
-	nBytesRightContext := len(toHighlight) * 2
+	nBytesRightContext := len(toHighlight.StringToHighlight) * 2
 	rightContext := getBytesRightOfWidth(nBytesRightContext, m.buffers, currentBufferIdx, remainingBufferWidth)
 
 	// apply continuation indicators if needed
@@ -160,7 +162,7 @@ func (m MultiLineBuffer) Take(
 func (m MultiLineBuffer) WrappedLines(
 	width int,
 	maxLinesEachEnd int,
-	toHighlight string,
+	toHighlight HighlightData,
 	toHighlightStyle lipgloss.Style,
 ) []string {
 	if width <= 0 {

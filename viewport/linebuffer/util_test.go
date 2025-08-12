@@ -470,9 +470,13 @@ func TestHighlightString(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
+			toHighlight := HighlightData{
+				StringToHighlight: tt.toHighlight,
+				IsRegex:           false,
+			}
 			result := highlightString(
 				tt.styledSegment,
-				tt.toHighlight,
+				toHighlight,
 				tt.highlightStyle,
 				tt.plainLine,
 				tt.segmentStart,
