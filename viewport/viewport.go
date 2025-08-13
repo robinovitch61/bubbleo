@@ -410,11 +410,19 @@ func (m *Model[T]) GetSelectedItem() *T {
 	return m.content.GetSelectedItem()
 }
 
-// SetStringToHighlight sets a string to highlight in the viewport
+// SetStringToHighlight sets a string to highlight in the viewport. Can only set string or regex, not both.
 func (m *Model[T]) SetStringToHighlight(h string) {
 	m.content.ToHighlight = linebuffer.HighlightData{
 		StringToHighlight: h,
 		IsRegex:           false,
+	}
+}
+
+// SetRegexToHighlight sets a regex to highlight in the viewport. Can only set string or regex, not both.
+func (m *Model[T]) SetRegexToHighlight(r *regexp.Regexp) {
+	m.content.ToHighlight = linebuffer.HighlightData{
+		RegexPatternToHighlight: r,
+		IsRegex:                 true,
 	}
 }
 

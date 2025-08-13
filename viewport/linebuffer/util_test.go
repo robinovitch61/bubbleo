@@ -602,7 +602,7 @@ func TestHighlightStringRegex(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			regex := regexp.MustCompile(tt.regexPattern)
 			toHighlight := HighlightData{
-				RegexPatternToHighlight: *regex,
+				RegexPatternToHighlight: regex,
 				IsRegex:                 true,
 			}
 			result := highlightString(
