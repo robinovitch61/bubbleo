@@ -510,6 +510,11 @@ func (m *Model[T]) SetSelectedItemIdx(idx int) {
 	m.vp.SetSelectedItemIdx(idx)
 }
 
+// GetItemMetrics returns data on the viewport items.
+func (m *Model[T]) GetItemMetrics() viewport.ItemMetrics {
+	return m.vp.GetItemMetrics()
+}
+
 // SetTopSticky sets whether selection sticks to the top
 func (m *Model[T]) SetTopSticky(topSticky bool) {
 	m.vp.SetTopSticky(topSticky)

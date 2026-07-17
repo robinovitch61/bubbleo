@@ -249,7 +249,12 @@ func (m *Model[T]) Update(msg tea.Msg) (*Model[T], tea.Cmd) {
 			m.GoToTop()
 		case actionBottom:
 			m.GoToBottom()
-		case actionUp, actionDown, actionHalfPageUp, actionHalfPageDown, actionPageUp, actionPageDown:
+		case actionUp,
+			actionDown,
+			actionHalfPageUp,
+			actionHalfPageDown,
+			actionPageUp,
+			actionPageDown:
 			m.scrollVertical(navResult)
 
 		case actionLeft, actionRight:
@@ -279,7 +284,12 @@ func (m *Model[T]) View() string {
 	// header lines
 	for i := range visibleHeaderLines {
 		headerItem := item.NewItem(visibleHeaderLines[i])
-		line, _ := headerItem.Take(0, m.display.bounds.width, m.config.continuationIndicator, []item.Highlight{})
+		line, _ := headerItem.Take(
+			0,
+			m.display.bounds.width,
+			m.config.continuationIndicator,
+			[]item.Highlight{},
+		)
 		builder.WriteString(line)
 		builder.WriteByte('\n')
 	}
@@ -287,7 +297,12 @@ func (m *Model[T]) View() string {
 	// render post-header line if set
 	if m.config.postHeaderLine != "" {
 		postHeaderItem := item.NewItem(m.config.postHeaderLine)
-		truncated, _ := postHeaderItem.Take(0, m.display.bounds.width, m.config.continuationIndicator, []item.Highlight{})
+		truncated, _ := postHeaderItem.Take(
+			0,
+			m.display.bounds.width,
+			m.config.continuationIndicator,
+			[]item.Highlight{},
+		)
 		builder.WriteString(truncated)
 		builder.WriteByte('\n')
 	}
@@ -314,7 +329,11 @@ func (m *Model[T]) View() string {
 		topItem := m.content.objects[itemIndexes[0]].GetItem()
 		currentSegments = topItem.LineBrokenItems()
 		var wrapOffset int
-		currentSegIdx, wrapOffset = decomposeLineOffset(currentSegments, m.display.topItemLineOffset, cw)
+		currentSegIdx, wrapOffset = decomposeLineOffset(
+			currentSegments,
+			m.display.topItemLineOffset,
+			cw,
+		)
 		currentCellsToLeft = wrapOffset * cw
 		prevItemIdx = itemIndexes[0]
 	}
@@ -421,7 +440,12 @@ func (m *Model[T]) View() string {
 	// render pre-footer line if set
 	if m.config.preFooterLine != "" {
 		preFooterItem := item.NewItem(m.config.preFooterLine)
-		truncated, _ := preFooterItem.Take(0, m.display.bounds.width, m.config.continuationIndicator, []item.Highlight{})
+		truncated, _ := preFooterItem.Take(
+			0,
+			m.display.bounds.width,
+			m.config.continuationIndicator,
+			[]item.Highlight{},
+		)
 		builder.WriteString(truncated)
 		builder.WriteByte('\n')
 	}
@@ -432,7 +456,12 @@ func (m *Model[T]) View() string {
 		inputView := m.config.saveState.filenameInput.View()
 		footerContent := prompt + inputView
 		footerItem := item.NewItem(footerContent)
-		truncated, _ := footerItem.Take(0, m.display.bounds.width, m.config.continuationIndicator, []item.Highlight{})
+		truncated, _ := footerItem.Take(
+			0,
+			m.display.bounds.width,
+			m.config.continuationIndicator,
+			[]item.Highlight{},
+		)
 		builder.WriteString(m.display.styles.FooterStyle.Render(truncated))
 	} else if m.config.saveState.saving || m.config.saveState.showingResult {
 		// show save status footer
@@ -443,7 +472,12 @@ func (m *Model[T]) View() string {
 			statusMsg = m.config.saveState.resultMsg
 		}
 		statusItem := item.NewItem(statusMsg)
-		truncated, _ := statusItem.Take(0, m.display.bounds.width, m.config.continuationIndicator, []item.Highlight{})
+		truncated, _ := statusItem.Take(
+			0,
+			m.display.bounds.width,
+			m.config.continuationIndicator,
+			[]item.Highlight{},
+		)
 		styledMsg := m.display.styles.FooterStyle.Render(truncated)
 		builder.WriteString(styledMsg)
 	} else if m.config.footerEnabled {
@@ -511,7 +545,10 @@ func (m *Model[T]) SetObjects(objects []T) {
 
 		// when staying at bottom, just want to scroll so selection in view, which is done above
 		if !stayAtBottom {
-			m.content.selectedIdx = clampValZeroToMax(m.content.selectedIdx, len(m.content.objects)-1)
+			m.content.selectedIdx = clampValZeroToMax(
+				m.content.selectedIdx,
+				len(m.content.objects)-1,
+			)
 			m.scrollSoSelectionInView()
 			if inView := m.selectionInViewInfo(); inView.numLinesSelectionInView > 0 {
 				deltaLinesAbove := initialNumLinesAboveSelection - inView.numLinesAboveSelection
@@ -641,6 +678,39 @@ func (m *Model[T]) SetHeight(height int) {
 // GetHeight returns the viewport height
 func (m *Model[T]) GetHeight() int {
 	return m.display.bounds.height
+}
+
+func (m *Model[T]) getVisibleItemsRange() (int, int) {
+	numItems := m.content.numItems()
+	if numItems == 0 {
+		return 0, 0
+	}
+	visibleContentItemIndexes := m.getVisibleContentItemIndexes()
+	if len(visibleContentItemIndexes) == 0 {
+		return 0, 0
+	}
+
+	return visibleContentItemIndexes[0], visibleContentItemIndexes[len(visibleContentItemIndexes)-1]
+}
+
+// ItemMetrics contains data on the viewport items.
+type ItemMetrics struct {
+	// Total number of items. This does not include header, post-header, pre-footer, footer, or filter input lines.
+	TotalItems int
+	// Zero-based global index of the first visible item.
+	FirstVisibleItemIdx int
+	// Zero-based global index of the last visible item.
+	LastVisibleItemIdx int
+}
+
+// GetItemMetrics returns data on the viewport items.
+func (m *Model[T]) GetItemMetrics() ItemMetrics {
+	firstVisible, lastVisible := m.getVisibleItemsRange()
+	return ItemMetrics{
+		TotalItems:          m.content.numItems(),
+		FirstVisibleItemIdx: firstVisible,
+		LastVisibleItemIdx:  lastVisible,
+	}
 }
 
 // GoToTop sets the viewport to the top position.
@@ -839,7 +909,11 @@ func (m *Model[T]) ensureWrappedPortionInView(itemIdx, startWidth, endWidth, ver
 
 	// check if already in view before any scroll-direction-based positioning
 	// this prevents oscillation when scrollingDown changes between calls
-	portionStartInView, portionEndInView, linesAbovePortion, linesBelowPortion := m.getWrappedPortionViewInfo(itemIdx, startLineOffset, endLineOffset)
+	portionStartInView, portionEndInView, linesAbovePortion, linesBelowPortion := m.getWrappedPortionViewInfo(
+		itemIdx,
+		startLineOffset,
+		endLineOffset,
+	)
 
 	// if fully visible, check if position is already acceptable
 	if portionStartInView && portionEndInView {
@@ -872,7 +946,11 @@ func (m *Model[T]) ensureWrappedPortionInView(itemIdx, startWidth, endWidth, ver
 				if endLineOffset >= linesToGoBack {
 					m.safelySetTopItemIdxAndOffset(itemIdx, endLineOffset-linesToGoBack)
 				} else {
-					targetItemIdx, targetOffset := m.getItemIdxAbove(itemIdx, endLineOffset, linesToGoBack-endLineOffset)
+					targetItemIdx, targetOffset := m.getItemIdxAbove(
+						itemIdx,
+						endLineOffset,
+						linesToGoBack-endLineOffset,
+					)
 					m.safelySetTopItemIdxAndOffset(targetItemIdx, targetOffset)
 				}
 			} else {
@@ -880,7 +958,11 @@ func (m *Model[T]) ensureWrappedPortionInView(itemIdx, startWidth, endWidth, ver
 				if startLineOffset >= desiredPad {
 					m.safelySetTopItemIdxAndOffset(itemIdx, startLineOffset-desiredPad)
 				} else {
-					targetItemIdx, targetOffset := m.getItemIdxAbove(itemIdx, startLineOffset, desiredPad-startLineOffset)
+					targetItemIdx, targetOffset := m.getItemIdxAbove(
+						itemIdx,
+						startLineOffset,
+						desiredPad-startLineOffset,
+					)
 					m.safelySetTopItemIdxAndOffset(targetItemIdx, targetOffset)
 				}
 			}
@@ -931,7 +1013,9 @@ func (m *Model[T]) ensureWrappedPortionInView(itemIdx, startWidth, endWidth, ver
 }
 
 // getWrappedPortionViewInfo returns whether the portion is in view and padding information
-func (m *Model[T]) getWrappedPortionViewInfo(itemIdx, startLineOffset, endLineOffset int) (portionStartInView, portionEndInView bool, linesAbove, linesBelow int) {
+func (m *Model[T]) getWrappedPortionViewInfo(
+	itemIdx, startLineOffset, endLineOffset int,
+) (portionStartInView, portionEndInView bool, linesAbove, linesBelow int) {
 	if !m.config.wrapText {
 		panic("getWrappedPortionViewInfo called when wrapText is false")
 	}
@@ -975,7 +1059,8 @@ func (m *Model[T]) targetBelowTop(targetItemIdx, targetStartLineOffset int) bool
 	if m.display.topItemIdx < targetItemIdx {
 		return true
 	}
-	if m.display.topItemIdx == targetItemIdx && m.display.topItemLineOffset < targetStartLineOffset {
+	if m.display.topItemIdx == targetItemIdx &&
+		m.display.topItemLineOffset < targetStartLineOffset {
 		return true
 	}
 	return false
@@ -1069,7 +1154,9 @@ func (m *Model[T]) ensureUnwrappedItemVerticallyInView(itemIdx, verticalPad int)
 }
 
 // ensureUnwrappedPortionHorizontallyInView pans horizontally to bring portion into view
-func (m *Model[T]) ensureUnwrappedPortionHorizontallyInView(startWidth, endWidth, horizontalPad int) {
+func (m *Model[T]) ensureUnwrappedPortionHorizontallyInView(
+	startWidth, endWidth, horizontalPad int,
+) {
 	if m.config.wrapText {
 		panic("ensureUnwrappedPortionHorizontallyInView called when wrapText is true")
 	}
@@ -1290,7 +1377,9 @@ func (m *Model[T]) scrollSoSelectionInView() {
 }
 
 // getItemIdxAbove consumes n lines by moving up through items, returning the final item index and line offset
-func (m *Model[T]) getItemIdxAbove(startItemIdx, startLineOffset, linesToConsume int) (finalItemIdx, finalLineOffset int) {
+func (m *Model[T]) getItemIdxAbove(
+	startItemIdx, startLineOffset, linesToConsume int,
+) (finalItemIdx, finalLineOffset int) {
 	itemIdx := startItemIdx
 	lineOffset := startLineOffset
 	remaining := linesToConsume
@@ -1310,7 +1399,9 @@ func (m *Model[T]) getItemIdxAbove(startItemIdx, startLineOffset, linesToConsume
 }
 
 // getItemIdxBelow consumes n lines by moving down through items, returning the final item index and line offset
-func (m *Model[T]) getItemIdxBelow(startItemIdx, linesToConsume int) (finalItemIdx, finalLineOffset int) {
+func (m *Model[T]) getItemIdxBelow(
+	startItemIdx, linesToConsume int,
+) (finalItemIdx, finalLineOffset int) {
 	itemIdx := startItemIdx
 	remaining := linesToConsume
 
@@ -1356,7 +1447,11 @@ func (m *Model[T]) scrollDownLines(numLinesDown int) {
 			} else {
 				// need to scroll up through multiple items
 				linesToConsume := -numLinesDown - newTopItemLineOffset
-				newTopItemIdx, newTopItemLineOffset = m.getItemIdxAbove(newTopItemIdx, newTopItemLineOffset, linesToConsume)
+				newTopItemIdx, newTopItemLineOffset = m.getItemIdxAbove(
+					newTopItemIdx,
+					newTopItemLineOffset,
+					linesToConsume,
+				)
 			}
 		} else { // scrolling down
 			numLinesInTopItem := m.numLinesForItem(newTopItemIdx)
@@ -1366,7 +1461,10 @@ func (m *Model[T]) scrollDownLines(numLinesDown int) {
 			} else {
 				// need to scroll down through multiple items
 				linesToConsume := numLinesDown - (numLinesInTopItem - (newTopItemLineOffset + 1))
-				newTopItemIdx, newTopItemLineOffset = m.getItemIdxBelow(newTopItemIdx, linesToConsume)
+				newTopItemIdx, newTopItemLineOffset = m.getItemIdxBelow(
+					newTopItemIdx,
+					linesToConsume,
+				)
 			}
 		}
 	}
@@ -1580,7 +1678,12 @@ func (m *Model[T]) getTruncatedFooterLine(visibleContentItemIndexes []int) strin
 	}
 
 	footerItem := item.NewItem(footerString)
-	f, _ := footerItem.Take(0, m.display.bounds.width, m.config.continuationIndicator, []item.Highlight{})
+	f, _ := footerItem.Take(
+		0,
+		m.display.bounds.width,
+		m.config.continuationIndicator,
+		[]item.Highlight{},
+	)
 	return m.display.styles.FooterStyle.Render(f)
 }
 
@@ -1657,7 +1760,11 @@ func (m *Model[T]) maxItemIdxAndMaxTopLineOffset() (int, int) {
 	} else {
 		// need to scroll up through multiple items to fill the screen
 		linesToConsume := numContentLines - numLinesLastItem
-		maxTopItemIdx, maxTopItemLineOffset = m.getItemIdxAbove(maxTopItemIdx, maxTopItemLineOffset, linesToConsume)
+		maxTopItemIdx, maxTopItemLineOffset = m.getItemIdxAbove(
+			maxTopItemIdx,
+			maxTopItemLineOffset,
+			linesToConsume,
+		)
 	}
 	return max(0, maxTopItemIdx), max(0, maxTopItemLineOffset)
 }
@@ -1683,7 +1790,10 @@ func (m *Model[T]) getNumVisibleItems() int {
 // selectionHighlights returns highlights that fill gaps between existing match
 // highlights with the selection style, so that the selection background covers
 // the entire item while match highlights remain visible on top.
-func (m *Model[T]) selectionHighlights(itemIdx int, matchHighlights []item.Highlight) []item.Highlight {
+func (m *Model[T]) selectionHighlights(
+	itemIdx int,
+	matchHighlights []item.Highlight,
+) []item.Highlight {
 	itemLen := len(m.content.objects[itemIdx].GetItem().ContentNoAnsi())
 	if itemLen == 0 {
 		return matchHighlights
@@ -1706,8 +1816,11 @@ func (m *Model[T]) selectionHighlights(itemIdx int, matchHighlights []item.Highl
 	for _, h := range sorted {
 		if h.ByteRangeUnstyledContent.Start > pos {
 			result = append(result, item.Highlight{
-				Style:                    m.display.styles.SelectedItemStyle,
-				ByteRangeUnstyledContent: item.ByteRange{Start: pos, End: h.ByteRangeUnstyledContent.Start},
+				Style: m.display.styles.SelectedItemStyle,
+				ByteRangeUnstyledContent: item.ByteRange{
+					Start: pos,
+					End:   h.ByteRangeUnstyledContent.Start,
+				},
 			})
 		}
 		result = append(result, h)
@@ -1754,8 +1867,10 @@ type clearSaveResultMsg struct{}
 func (m *Model[T]) saveToFile(filename string) tea.Cmd {
 	return func() tea.Msg {
 		// create directory if needed
-		if err := os.MkdirAll(m.config.saveDir, 0750); err != nil {
-			return fileSavedMsg{err: fmt.Errorf("failed to create directory %s: %w", m.config.saveDir, err)}
+		if err := os.MkdirAll(m.config.saveDir, 0o750); err != nil {
+			return fileSavedMsg{
+				err: fmt.Errorf("failed to create directory %s: %w", m.config.saveDir, err),
+			}
 		}
 
 		fullPath := filepath.Join(m.config.saveDir, filename)
@@ -1767,7 +1882,7 @@ func (m *Model[T]) saveToFile(filename string) tea.Cmd {
 			content.WriteString("\n")
 		}
 
-		if err := os.WriteFile(fullPath, []byte(content.String()), 0600); err != nil {
+		if err := os.WriteFile(fullPath, []byte(content.String()), 0o600); err != nil {
 			return fileSavedMsg{err: fmt.Errorf("failed to write file: %w", err)}
 		}
 
@@ -1779,7 +1894,10 @@ func (m *Model[T]) saveToFile(filename string) tea.Cmd {
 // (segmentIdx, wrapOffset) given the item's line-broken items.
 // segmentIdx is which line-broken item, wrapOffset is how many wrapped lines
 // into that segment. For single-line items: returns (0, lineOffset).
-func decomposeLineOffset(segments []item.Item, lineOffset, wrapWidth int) (segmentIdx, wrapOffset int) {
+func decomposeLineOffset(
+	segments []item.Item,
+	lineOffset, wrapWidth int,
+) (segmentIdx, wrapOffset int) {
 	remaining := lineOffset
 	for i, seg := range segments {
 		n := seg.NumWrappedLines(wrapWidth)
@@ -1797,7 +1915,11 @@ func decomposeLineOffset(segments []item.Item, lineOffset, wrapWidth int) (segme
 // remapHighlightsForSegment clips and adjusts highlight byte ranges from the full
 // item's content space to a specific line-broken item's content space.
 // Highlights that don't overlap the segment are dropped.
-func remapHighlightsForSegment(highlights []item.Highlight, segments []item.Item, segIdx int) []item.Highlight {
+func remapHighlightsForSegment(
+	highlights []item.Highlight,
+	segments []item.Item,
+	segIdx int,
+) []item.Highlight {
 	if len(segments) <= 1 {
 		// single-segment item: highlights are already in the right space
 		return highlights
