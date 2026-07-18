@@ -45,6 +45,17 @@ var surroundingAnsiRegex = regexp.MustCompile(`(\x1b\[[0-9;]*m.*?\x1b\[0?m)`)
 // CompareFn is a function type for comparing two items of type T.
 type CompareFn[T any] func(a, b T) bool
 
+// ItemMetrics contains data on the viewport items
+type ItemMetrics struct {
+	// Total number of items, including those not currently visible.
+	// This does not include header, post-header, pre-footer, footer, or filter input lines.
+	TotalItems int
+	// Zero-based global index of the first visible item, or -1 if no item is visible
+	FirstVisibleItemIdx int
+	// Zero-based global index of the last visible item, or -1 if no item is visible
+	LastVisibleItemIdx int
+}
+
 // Option is a functional option for configuring the viewport
 type Option[T Object] func(*Model[T])
 
@@ -643,36 +654,21 @@ func (m *Model[T]) GetHeight() int {
 	return m.display.bounds.height
 }
 
-func (m *Model[T]) getVisibleItemsRange() (int, int) {
-	numItems := m.content.numItems()
-	if numItems == 0 {
-		return 0, 0
-	}
+// GetItemMetrics returns data on the viewport items
+func (m *Model[T]) GetItemMetrics() ItemMetrics {
 	visibleContentItemIndexes := m.getVisibleContentItemIndexes()
 	if len(visibleContentItemIndexes) == 0 {
-		return 0, 0
+		return ItemMetrics{
+			TotalItems:          m.content.numItems(),
+			FirstVisibleItemIdx: -1,
+			LastVisibleItemIdx:  -1,
+		}
 	}
 
-	return visibleContentItemIndexes[0], visibleContentItemIndexes[len(visibleContentItemIndexes)-1]
-}
-
-// ItemMetrics contains data on the viewport items.
-type ItemMetrics struct {
-	// Total number of items. This does not include header, post-header, pre-footer, footer, or filter input lines.
-	TotalItems int
-	// Zero-based global index of the first visible item.
-	FirstVisibleItemIdx int
-	// Zero-based global index of the last visible item.
-	LastVisibleItemIdx int
-}
-
-// GetItemMetrics returns data on the viewport items.
-func (m *Model[T]) GetItemMetrics() ItemMetrics {
-	firstVisible, lastVisible := m.getVisibleItemsRange()
 	return ItemMetrics{
 		TotalItems:          m.content.numItems(),
-		FirstVisibleItemIdx: firstVisible,
-		LastVisibleItemIdx:  lastVisible,
+		FirstVisibleItemIdx: visibleContentItemIndexes[0],
+		LastVisibleItemIdx:  visibleContentItemIndexes[len(visibleContentItemIndexes)-1],
 	}
 }
 

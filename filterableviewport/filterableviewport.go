@@ -510,7 +510,7 @@ func (m *Model[T]) SetSelectedItemIdx(idx int) {
 	m.vp.SetSelectedItemIdx(idx)
 }
 
-// GetItemMetrics returns data on the viewport items.
+// GetItemMetrics returns data on the viewport items
 func (m *Model[T]) GetItemMetrics() viewport.ItemMetrics {
 	return m.vp.GetItemMetrics()
 }
